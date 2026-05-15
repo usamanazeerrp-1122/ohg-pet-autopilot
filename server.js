@@ -1,5 +1,6 @@
 const https = require('https');
 const http = require('http');
+const url = require('url');
 
 const FB_SYS_TOKEN = (process.env.FB_TOKEN || '').trim().replace(/['"]/g,'');
 const FB_PAGE_ID   = (process.env.FB_PAGE_ID || '1593329474221951').trim().replace(/['"]/g,'');
@@ -49,7 +50,7 @@ let postIndex = 0;
 let styleIndex = 0;
 let totalPosted = 0;
 let logs = [];
-let PAGE_TOKEN = ''; // will be fetched on startup
+let PAGE_TOKEN = '';
 
 function log(msg) {
   const t = new Date().toISOString();
@@ -87,17 +88,69 @@ function apiRequest(options, body) {
   });
 }
 
-// Fetch Page Access Token using the System User token
+// Fetch the OG image URL from a page's HTML meta tags
+function fetchOGImage(pageUrl) {
+  return new Promise((resolve) => {
+    try {
+      const parsed = url.parse(pageUrl);
+      const isHttps = parsed.protocol === 'https:';
+      const mod = isHttps ? https : http;
+      const options = {
+        hostname: parsed.hostname,
+        path: parsed.path || '/',
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; OHGBot/1.0)',
+          'Accept': 'text/html'
+        },
+        timeout: 8000
+      };
+      const req = mod.request(options, res => {
+        // Follow redirects (up to 3)
+        if([301,302,303,307,308].includes(res.statusCode) && res.headers.location) {
+          log(`OG redirect → ${res.headers.location}`);
+          return fetchOGImage(res.headers.location).then(resolve);
+        }
+        let html = '';
+        res.on('data', chunk => {
+          html += chunk;
+          // Stop reading after we have enough to find OG tags
+          if(html.length > 50000) res.destroy();
+        });
+        res.on('end', () => {
+          // Try og:image first, then twitter:image
+          const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
+                       || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)
+                       || html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
+          if(ogMatch && ogMatch[1]) {
+            log(`OG image found: ${ogMatch[1].substring(0,80)}...`);
+            resolve(ogMatch[1]);
+          } else {
+            log('No OG image found in page HTML');
+            resolve(null);
+          }
+        });
+        res.on('error', () => resolve(null));
+      });
+      req.on('error', () => resolve(null));
+      req.on('timeout', () => { req.destroy(); resolve(null); });
+      req.end();
+    } catch(e) {
+      log(`OG fetch error: ${e.message}`);
+      resolve(null);
+    }
+  });
+}
+
+// Fetch page token using system user token
 async function fetchPageToken() {
   log('Fetching Page Access Token from Graph API...');
   log(`System token length: ${FB_SYS_TOKEN.length} | starts: ${FB_SYS_TOKEN.substring(0,8)}`);
-  
   const options = {
     hostname: 'graph.facebook.com',
     path: `/v19.0/me/accounts?access_token=${FB_SYS_TOKEN}`,
     method: 'GET'
   };
-  
   try {
     const data = await apiRequest(options, null);
     if(data.error) {
@@ -126,13 +179,18 @@ async function generateCaption(post, style, utm) {
 Title: "${post.title}"
 Category: ${post.cat}
 Style: ${style}
-Link: ${utm}
-Rules: Hook opening line, 3-4 sentences total, 2-3 relevant emojis, clear CTA with link at end, NO hashtags, warm and trustworthy tone.
-Return caption text ONLY, nothing else.`;
+Rules:
+- First line: ALL CAPS heading (the title rewritten as a punchy hook, max 8 words)
+- Blank line
+- 2-3 sentences: SEO-optimized, warm and trustworthy tone, 2-3 relevant emojis
+- NO hashtags
+- Do NOT include any URL or link in your response — the link will be added separately
+
+Return caption text ONLY (heading + body), nothing else.`;
 
   const body = JSON.stringify({
-    model: "claude-sonnet-4-5",
-    max_tokens: 350,
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 400,
     messages: [{role:"user",content:prompt}]
   });
 
@@ -153,13 +211,47 @@ Return caption text ONLY, nothing else.`;
   return data.content[0].text.trim();
 }
 
-async function publishToFacebook(caption, link) {
+// Post with image (photo post) — preferred format
+// Append the visible URL line to every caption
+function appendLink(caption, utm, post) {
+  const siteLine = post.aff ? '' : '\n\nonehealthglobe.com';
+  return `${caption}\n\n🔗 For the full guide, visit: ${utm}${siteLine}`;
+}
+
+// Photo post — image is clickable to UTM url via the `link` field
+async function publishWithImage(caption, imageUrl, utm, post) {
+  log(`Posting with image: ${imageUrl.substring(0,60)}...`);
+  const fullCaption = appendLink(caption, utm, post);
   const body = JSON.stringify({
-    message: caption,
-    link: link,
+    caption: fullCaption,   // text shown under the photo
+    url: imageUrl,          // the image to display
+    link: utm,              // clicking the image opens this URL
+    published: true,
     access_token: PAGE_TOKEN
   });
+  const options = {
+    hostname: 'graph.facebook.com',
+    path: `/v19.0/${FB_PAGE_ID}/photos`,
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Content-Length': Buffer.byteLength(body)
+    }
+  };
+  const data = await apiRequest(options, body);
+  if(data.error) throw new Error('FB Photo API: ' + data.error.message);
+  return data.id || data.post_id;
+}
 
+// Fallback: text + link card post (no standalone image)
+async function publishLinkPost(caption, utm, post) {
+  log('Falling back to link post (no image)...');
+  const fullCaption = appendLink(caption, utm, post);
+  const body = JSON.stringify({
+    message: fullCaption,
+    link: utm,
+    access_token: PAGE_TOKEN
+  });
   const options = {
     hostname: 'graph.facebook.com',
     path: `/v19.0/${FB_PAGE_ID}/feed`,
@@ -169,7 +261,6 @@ async function publishToFacebook(caption, link) {
       'Content-Length': Buffer.byteLength(body)
     }
   };
-
   const data = await apiRequest(options, body);
   if(data.error) throw new Error('Facebook API: ' + data.error.message);
   return data.id;
@@ -192,17 +283,34 @@ async function runPost() {
   log(`START — P${String(post.id).padStart(2,'0')}: ${post.title}`);
 
   try {
+    // Generate AI caption (heading + body only, no URL — appended separately)
     const caption = await generateCaption(post, style, utm);
     log(`Caption ready (${caption.length} chars)`);
-    const postId = await publishToFacebook(caption, utm);
-    log(`SUCCESS — FB Post ID: ${postId}`);
+
+    // Fetch OG image from the post URL
+    const ogImage = await fetchOGImage(post.url);
+
+    let postId;
+    if(ogImage) {
+      try {
+        postId = await publishWithImage(caption, ogImage, utm, post);
+        log(`SUCCESS (photo post) — FB Post ID: ${postId}`);
+      } catch(imgErr) {
+        log(`Photo post failed: ${imgErr.message} — falling back to link post`);
+        postId = await publishLinkPost(caption, utm, post);
+        log(`SUCCESS (link post fallback) — FB Post ID: ${postId}`);
+      }
+    } else {
+      postId = await publishLinkPost(caption, utm, post);
+      log(`SUCCESS (link post, no OG image) — FB Post ID: ${postId}`);
+    }
+
     totalPosted++;
     postIndex++;
     styleIndex++;
     log(`Total posted: ${totalPosted} | Next: P${String(POSTS[postIndex%31].id).padStart(2,'0')}`);
   } catch(err) {
     log(`ERROR — ${err.message}`);
-    // If token expired, refresh it
     if(err.message.includes('token') || err.message.includes('OAuthException')) {
       log('Token error detected — refreshing page token...');
       await fetchPageToken();
@@ -213,12 +321,11 @@ async function runPost() {
 }
 
 // STARTUP
-log('OHG Pet Autopilot Server v4 starting...');
+log('OHG Pet Autopilot Server v5 starting...');
 log(`Config: PAGE=${FB_PAGE_ID} | INTERVAL=${INTERVAL_MS/60000}min | HOURS=${ACTIVE_FROM}-${ACTIVE_TO} EST`);
 log(`System token: ${FB_SYS_TOKEN ? 'SET (len='+FB_SYS_TOKEN.length+')' : 'MISSING'}`);
 log(`Claude key: ${CLAUDE_KEY ? 'SET (len='+CLAUDE_KEY.length+')' : 'MISSING'}`);
 
-// Fetch page token first, then start posting
 fetchPageToken().then(() => {
   log(`Scheduler active — first post in 15 seconds, then every ${INTERVAL_MS/60000} minutes`);
   setTimeout(runPost, 15000);
@@ -231,7 +338,7 @@ http.createServer((req, res) => {
   const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
   const nextPost = POSTS[postIndex % 31];
   const html = `<!DOCTYPE html>
-<html><head><title>OHG Pet Autopilot v4</title>
+<html><head><title>OHG Pet Autopilot v5</title>
 <meta http-equiv="refresh" content="30">
 <style>
 body{font-family:Arial;background:#0a0f0d;color:#e8f5ec;padding:20px;max-width:900px;margin:0 auto;}
@@ -241,9 +348,10 @@ h1{color:#2dff8e;}
 .sl{font-size:11px;color:#4a6652;margin-top:4px;}
 .log{background:#000;border-radius:8px;padding:14px;font-family:monospace;font-size:11px;max-height:500px;overflow-y:auto;}
 .log div{padding:2px 0;border-bottom:1px solid #111;}
+.badge{background:#1a2e20;border:1px solid #2dff8e;border-radius:4px;padding:2px 8px;font-size:11px;color:#2dff8e;margin-left:8px;}
 </style></head>
 <body>
-<h1>🐾 OHG Pet Autopilot v4</h1>
+<h1>🐾 OHG Pet Autopilot v5 <span class="badge">+Image Posts</span></h1>
 <p style="color:#4a6652;font-size:13px">Auto-refreshes every 30s | ${est.toLocaleString('en-US',{timeZone:'America/New_York'})} EST</p>
 <div>
 <div class="stat"><div class="sv">${totalPosted}</div><div class="sl">Published</div></div>
@@ -253,7 +361,7 @@ h1{color:#2dff8e;}
 </div>
 <h3 style="color:#7a9e85;margin-top:20px">Next: P${String(nextPost.id).padStart(2,'0')} — ${nextPost.title}</h3>
 <h3 style="color:#7a9e85;margin-top:16px">Log</h3>
-<div class="log">${logs.map(l=>`<div style="color:${l.includes('SUCCESS')?'#2dff8e':l.includes('ERROR')?'#ff5252':l.includes('SKIP')?'#ffb830':'#7a9e85'}">${l}</div>`).join('')}</div>
+<div class="log">${logs.map(l=>`<div style="color:${l.includes('SUCCESS')?'#2dff8e':l.includes('ERROR')?'#ff5252':l.includes('SKIP')?'#ffb830':l.includes('OG image')?'#64b5f6':'#7a9e85'}">${l}</div>`).join('')}</div>
 </body></html>`;
   res.writeHead(200,{'Content-Type':'text/html'});
   res.end(html);
