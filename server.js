@@ -90,7 +90,16 @@ function apiRequest(options, body) {
 
 // Fetch the OG image URL from a page's HTML meta tags
 function fetchOGImage(pageUrl) {
-  return new Promise((resolve) => {
+  log(`OG fetch starting: ${pageUrl.substring(0,60)}...`);
+
+  const timeoutPromise = new Promise(resolve => {
+    setTimeout(() => {
+      log('OG fetch timed out after 7s — skipping image');
+      resolve(null);
+    }, 7000);
+  });
+
+  const fetchPromise = new Promise((resolve) => {
     try {
       const parsed = url.parse(pageUrl);
       const isHttps = parsed.protocol === 'https:';
@@ -102,44 +111,43 @@ function fetchOGImage(pageUrl) {
         headers: {
           'User-Agent': 'Mozilla/5.0 (compatible; OHGBot/1.0)',
           'Accept': 'text/html'
-        },
-        timeout: 8000
+        }
       };
       const req = mod.request(options, res => {
-        // Follow redirects (up to 3)
+        log(`OG fetch status: ${res.statusCode}`);
         if([301,302,303,307,308].includes(res.statusCode) && res.headers.location) {
-          log(`OG redirect → ${res.headers.location}`);
+          log(`OG redirect to: ${res.headers.location.substring(0,60)}`);
+          req.destroy();
           return fetchOGImage(res.headers.location).then(resolve);
         }
         let html = '';
         res.on('data', chunk => {
           html += chunk;
-          // Stop reading after we have enough to find OG tags
           if(html.length > 50000) res.destroy();
         });
         res.on('end', () => {
-          // Try og:image first, then twitter:image
           const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
                        || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)
                        || html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
           if(ogMatch && ogMatch[1]) {
-            log(`OG image found: ${ogMatch[1].substring(0,80)}...`);
+            log(`OG image found: ${ogMatch[1].substring(0,80)}`);
             resolve(ogMatch[1]);
           } else {
-            log('No OG image found in page HTML');
+            log(`OG: no image tag in page (html len=${html.length})`);
             resolve(null);
           }
         });
-        res.on('error', () => resolve(null));
+        res.on('error', (e) => { log(`OG res error: ${e.message}`); resolve(null); });
       });
-      req.on('error', () => resolve(null));
-      req.on('timeout', () => { req.destroy(); resolve(null); });
+      req.on('error', (e) => { log(`OG req error: ${e.message}`); resolve(null); });
       req.end();
     } catch(e) {
-      log(`OG fetch error: ${e.message}`);
+      log(`OG fetch exception: ${e.message}`);
       resolve(null);
     }
   });
+
+  return Promise.race([fetchPromise, timeoutPromise]);
 }
 
 // Fetch page token using system user token
