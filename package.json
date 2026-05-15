@@ -1,0 +1,12 @@
+{
+  "name": "ohg-pet-autopilot",
+  "version": "2.0.0",
+  "description": "OHG Pet Facebook Autopilot Server",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
