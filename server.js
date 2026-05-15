@@ -189,7 +189,7 @@ Rules:
 Return caption text ONLY (heading + body), nothing else.`;
 
   const body = JSON.stringify({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-5",
     max_tokens: 400,
     messages: [{role:"user",content:prompt}]
   });
