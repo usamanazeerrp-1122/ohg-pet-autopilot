@@ -1,6 +1,5 @@
 const https = require('https');
 const http = require('http');
-const url = require('url');
 
 const FB_SYS_TOKEN = (process.env.FB_TOKEN || '').trim().replace(/['"]/g,'');
 const FB_PAGE_ID   = (process.env.FB_PAGE_ID || '1593329474221951').trim().replace(/['"]/g,'');
@@ -12,37 +11,37 @@ const ACTIVE_FROM  = parseInt((process.env.ACTIVE_FROM || '8').replace(/['"]/g,'
 const ACTIVE_TO    = parseInt((process.env.ACTIVE_TO || '22').replace(/['"]/g,''));
 
 const POSTS = [
-  {id:1,title:"Why Dog Paw Health Matters",cat:"Dog Care",url:`${BASE_URL}/dog-paw-scanner/`,aff:false},
-  {id:2,title:"Quality Pet Products for Every Owner",cat:"Products",url:`${BASE_URL}/products/`,aff:false},
-  {id:3,title:"Best Dog Nail Clipper LED Light",cat:"Product",url:"https://www.dhgate.com/product/led-light-pet-nail-clipper-with-amplification/1010092124.html",aff:true},
-  {id:4,title:"Best Pet Grooming Kit",cat:"Product",url:"https://www.dhgate.com/product/combs-dog-hair-remover-cat-brush-grooming/1028087374.html",aff:true},
-  {id:5,title:"Best Pet Collar Camera HD 1080p",cat:"Product",url:"https://www.dhgate.com/product/dog-collars-hd-1080p-wireless-collar-camera/1032506070.html",aff:true},
-  {id:6,title:"Pet Stroller and Bike Trailer 2 in 1",cat:"Product",url:"https://bestchoiceproducts.com/products/2-in-1-pet-dog-bike-trailer",aff:true},
-  {id:7,title:"Dog Grooming Kit 8 Piece Self Cleaning",cat:"Product",url:"https://www.dhgate.com/product/8pcs-set-dog-grooming-kit-self-cleaning-pet/1087614127.html",aff:true},
-  {id:8,title:"Pet Paw Cleaner Foam Waterless",cat:"Product",url:"https://www.dhgate.com/product/pet-foot-paw-cleaner-100ml-foam-waterless/1010228089.html",aff:true},
-  {id:9,title:"Best Dog Tooth Cleaning Care",cat:"Product",url:"https://www.dhgate.com/product/100-pieces-batch-of-pet-finger-toothbrushes/1010228766.html",aff:true},
-  {id:10,title:"Best Pet Shampoo for Skin Care",cat:"Product",url:"https://www.dhgate.com/product/pet-shampoo-for-cats-and-dogs-cleansing-bathing/1089431467.html",aff:true},
-  {id:11,title:"Why Beagle Is a Perfect Family Dog",cat:"Breed Guide",url:`${BASE_URL}/beagle-temperament/`,aff:false},
-  {id:12,title:"Boxer Best Family Dog and Care Guide",cat:"Breed Guide",url:`${BASE_URL}/boxer-breed-temperament/`,aff:false},
-  {id:13,title:"Bulldog Best Dog for Kids Temperament",cat:"Breed Guide",url:`${BASE_URL}/english-bulldog-temperament/`,aff:false},
-  {id:14,title:"German Shepherd Breed Temperament",cat:"Breed Guide",url:`${BASE_URL}/german-shepherd-temperament/`,aff:false},
-  {id:15,title:"Why Rottweiler Has a Strong Bond",cat:"Breed Guide",url:`${BASE_URL}/rottweiler-temperament/`,aff:false},
-  {id:16,title:"Pomeranian Energetic Breed Guide",cat:"Breed Guide",url:`${BASE_URL}/pomeranian-dog-breed-temperament-care-guide/`,aff:false},
-  {id:17,title:"Why Persian Cat Is Loved Most",cat:"Cat Guide",url:`${BASE_URL}/persian-cat-temperament/`,aff:false},
-  {id:18,title:"Ragdoll Cat Beauty and Family Fitness",cat:"Cat Guide",url:`${BASE_URL}/ragdoll-temperament/`,aff:false},
-  {id:19,title:"Top 5 Dog Deadly Diseases and Symptoms",cat:"Health",url:`${BASE_URL}/top-5-deadly-common-dog-diseases-symptoms-prevention-treatment-pictures/`,aff:false},
-  {id:20,title:"What Is in a Pet First Aid Kit",cat:"Health",url:`${BASE_URL}/pet-first-aid-kit-checklist/`,aff:false},
-  {id:21,title:"How to Keep Vaccine Records for Pets",cat:"Health",url:`${BASE_URL}/pet-vaccine-tracker/`,aff:false},
-  {id:22,title:"Toxic Plants List for Pets",cat:"Health",url:`${BASE_URL}/common-plants-that-may-be-toxic-to-pets/`,aff:false},
-  {id:23,title:"Complete Kitten Planner 0 to Adult",cat:"Cat Guide",url:`${BASE_URL}/new-kitten-planner/`,aff:false},
-  {id:24,title:"Most Common Pet Food Questions Answered",cat:"Nutrition",url:`${BASE_URL}/pet-food-queries/`,aff:false},
-  {id:25,title:"How to Groom Cat at Home Like a Pro",cat:"Cat Guide",url:`${BASE_URL}/cat-grooming-guide-2/`,aff:false},
-  {id:26,title:"Pet Hygiene Checking Scorecard",cat:"Health",url:`${BASE_URL}/pet-hygiene-score-card/`,aff:false},
-  {id:27,title:"Signs of Osteoarthritis in Cats",cat:"Cat Health",url:`${BASE_URL}/simple-tips-to-know-signs-of-osteoarthritis-in-cats/`,aff:false},
-  {id:28,title:"How to Prevent Cat Paw Scratches at Home",cat:"Cat Health",url:`${BASE_URL}/how-to-prevent-cat-paw-scratches-at-home/`,aff:false},
-  {id:29,title:"How to Harness Train a Cat at Home",cat:"Cat Guide",url:`${BASE_URL}/how-to-walk-your-cat-safely-harness-training-for-beginners/`,aff:false},
-  {id:30,title:"How to Prevent Zoonosis at Home",cat:"Health",url:`${BASE_URL}/digital-awareness-to-minimize-zoonosis-spread/`,aff:false},
-  {id:31,title:"Echo Water Flask Rehydration Wellness",cat:"General",url:"https://echowater.com/products/echo-flask",aff:true},
+  {id:1, title:"Why Dog Paw Health Matters",              cat:"Dog Care",    url:`${BASE_URL}/dog-paw-scanner/`,                                                                    aff:false},
+  {id:2, title:"Quality Pet Products for Every Owner",    cat:"Products",    url:`${BASE_URL}/products/`,                                                                           aff:false},
+  {id:3, title:"Best Dog Nail Clipper LED Light",         cat:"Product",     url:"https://www.dhgate.com/product/led-light-pet-nail-clipper-with-amplification/1010092124.html",   aff:true},
+  {id:4, title:"Best Pet Grooming Kit",                   cat:"Product",     url:"https://www.dhgate.com/product/combs-dog-hair-remover-cat-brush-grooming/1028087374.html",       aff:true},
+  {id:5, title:"Best Pet Collar Camera HD 1080p",         cat:"Product",     url:"https://www.dhgate.com/product/dog-collars-hd-1080p-wireless-collar-camera/1032506070.html",    aff:true},
+  {id:6, title:"Pet Stroller and Bike Trailer 2 in 1",    cat:"Product",     url:"https://bestchoiceproducts.com/products/2-in-1-pet-dog-bike-trailer",                           aff:true},
+  {id:7, title:"Dog Grooming Kit 8 Piece Self Cleaning",  cat:"Product",     url:"https://www.dhgate.com/product/8pcs-set-dog-grooming-kit-self-cleaning-pet/1087614127.html",    aff:true},
+  {id:8, title:"Pet Paw Cleaner Foam Waterless",          cat:"Product",     url:"https://www.dhgate.com/product/pet-foot-paw-cleaner-100ml-foam-waterless/1010228089.html",      aff:true},
+  {id:9, title:"Best Dog Tooth Cleaning Care",            cat:"Product",     url:"https://www.dhgate.com/product/100-pieces-batch-of-pet-finger-toothbrushes/1010228766.html",    aff:true},
+  {id:10,title:"Best Pet Shampoo for Skin Care",          cat:"Product",     url:"https://www.dhgate.com/product/pet-shampoo-for-cats-and-dogs-cleansing-bathing/1089431467.html",aff:true},
+  {id:11,title:"Why Beagle Is a Perfect Family Dog",      cat:"Breed Guide", url:`${BASE_URL}/beagle-temperament/`,                                                                aff:false},
+  {id:12,title:"Boxer Best Family Dog and Care Guide",    cat:"Breed Guide", url:`${BASE_URL}/boxer-breed-temperament/`,                                                           aff:false},
+  {id:13,title:"Bulldog Best Dog for Kids Temperament",   cat:"Breed Guide", url:`${BASE_URL}/english-bulldog-temperament/`,                                                       aff:false},
+  {id:14,title:"German Shepherd Breed Temperament",       cat:"Breed Guide", url:`${BASE_URL}/german-shepherd-temperament/`,                                                       aff:false},
+  {id:15,title:"Why Rottweiler Has a Strong Bond",        cat:"Breed Guide", url:`${BASE_URL}/rottweiler-temperament/`,                                                            aff:false},
+  {id:16,title:"Pomeranian Energetic Breed Guide",        cat:"Breed Guide", url:`${BASE_URL}/pomeranian-dog-breed-temperament-care-guide/`,                                       aff:false},
+  {id:17,title:"Why Persian Cat Is Loved Most",           cat:"Cat Guide",   url:`${BASE_URL}/persian-cat-temperament/`,                                                           aff:false},
+  {id:18,title:"Ragdoll Cat Beauty and Family Fitness",   cat:"Cat Guide",   url:`${BASE_URL}/ragdoll-temperament/`,                                                               aff:false},
+  {id:19,title:"Top 5 Dog Deadly Diseases and Symptoms",  cat:"Health",      url:`${BASE_URL}/top-5-deadly-common-dog-diseases-symptoms-prevention-treatment-pictures/`,          aff:false},
+  {id:20,title:"What Is in a Pet First Aid Kit",          cat:"Health",      url:`${BASE_URL}/pet-first-aid-kit-checklist/`,                                                       aff:false},
+  {id:21,title:"How to Keep Vaccine Records for Pets",    cat:"Health",      url:`${BASE_URL}/pet-vaccine-tracker/`,                                                               aff:false},
+  {id:22,title:"Toxic Plants List for Pets",              cat:"Health",      url:`${BASE_URL}/common-plants-that-may-be-toxic-to-pets/`,                                           aff:false},
+  {id:23,title:"Complete Kitten Planner 0 to Adult",      cat:"Cat Guide",   url:`${BASE_URL}/new-kitten-planner/`,                                                                aff:false},
+  {id:24,title:"Most Common Pet Food Questions Answered", cat:"Nutrition",   url:`${BASE_URL}/pet-food-queries/`,                                                                  aff:false},
+  {id:25,title:"How to Groom Cat at Home Like a Pro",     cat:"Cat Guide",   url:`${BASE_URL}/cat-grooming-guide-2/`,                                                              aff:false},
+  {id:26,title:"Pet Hygiene Checking Scorecard",          cat:"Health",      url:`${BASE_URL}/pet-hygiene-score-card/`,                                                            aff:false},
+  {id:27,title:"Signs of Osteoarthritis in Cats",         cat:"Cat Health",  url:`${BASE_URL}/simple-tips-to-know-signs-of-osteoarthritis-in-cats/`,                              aff:false},
+  {id:28,title:"How to Prevent Cat Paw Scratches at Home",cat:"Cat Health",  url:`${BASE_URL}/how-to-prevent-cat-paw-scratches-at-home/`,                                         aff:false},
+  {id:29,title:"How to Harness Train a Cat at Home",      cat:"Cat Guide",   url:`${BASE_URL}/how-to-walk-your-cat-safely-harness-training-for-beginners/`,                       aff:false},
+  {id:30,title:"How to Prevent Zoonosis at Home",         cat:"Health",      url:`${BASE_URL}/digital-awareness-to-minimize-zoonosis-spread/`,                                    aff:false},
+  {id:31,title:"Echo Water Flask Rehydration Wellness",   cat:"General",     url:"https://echowater.com/products/echo-flask",                                                     aff:true},
 ];
 
 const STYLES = ["Educational","Storytelling","How-To","Hook/Viral","FAQ/List"];
@@ -88,69 +87,6 @@ function apiRequest(options, body) {
   });
 }
 
-// Fetch the OG image URL from a page's HTML meta tags
-function fetchOGImage(pageUrl) {
-  log(`OG fetch starting: ${pageUrl.substring(0,60)}...`);
-
-  const timeoutPromise = new Promise(resolve => {
-    setTimeout(() => {
-      log('OG fetch timed out after 7s — skipping image');
-      resolve(null);
-    }, 7000);
-  });
-
-  const fetchPromise = new Promise((resolve) => {
-    try {
-      const parsed = url.parse(pageUrl);
-      const isHttps = parsed.protocol === 'https:';
-      const mod = isHttps ? https : http;
-      const options = {
-        hostname: parsed.hostname,
-        path: parsed.path || '/',
-        method: 'GET',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; OHGBot/1.0)',
-          'Accept': 'text/html'
-        }
-      };
-      const req = mod.request(options, res => {
-        log(`OG fetch status: ${res.statusCode}`);
-        if([301,302,303,307,308].includes(res.statusCode) && res.headers.location) {
-          log(`OG redirect to: ${res.headers.location.substring(0,60)}`);
-          req.destroy();
-          return fetchOGImage(res.headers.location).then(resolve);
-        }
-        let html = '';
-        res.on('data', chunk => {
-          html += chunk;
-          if(html.length > 50000) res.destroy();
-        });
-        res.on('end', () => {
-          const ogMatch = html.match(/<meta[^>]+property=["']og:image["'][^>]+content=["']([^"']+)["']/i)
-                       || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:image["']/i)
-                       || html.match(/<meta[^>]+name=["']twitter:image["'][^>]+content=["']([^"']+)["']/i);
-          if(ogMatch && ogMatch[1]) {
-            log(`OG image found: ${ogMatch[1].substring(0,80)}`);
-            resolve(ogMatch[1]);
-          } else {
-            log(`OG: no image tag in page (html len=${html.length})`);
-            resolve(null);
-          }
-        });
-        res.on('error', (e) => { log(`OG res error: ${e.message}`); resolve(null); });
-      });
-      req.on('error', (e) => { log(`OG req error: ${e.message}`); resolve(null); });
-      req.end();
-    } catch(e) {
-      log(`OG fetch exception: ${e.message}`);
-      resolve(null);
-    }
-  });
-
-  return Promise.race([fetchPromise, timeoutPromise]);
-}
-
-// Fetch page token using system user token
 async function fetchPageToken() {
   log('Fetching Page Access Token from Graph API...');
   log(`System token length: ${FB_SYS_TOKEN.length} | starts: ${FB_SYS_TOKEN.substring(0,8)}`);
@@ -163,43 +99,40 @@ async function fetchPageToken() {
     const data = await apiRequest(options, null);
     if(data.error) {
       log(`ERROR fetching page token: ${data.error.message}`);
-      log('Falling back to system token directly...');
       PAGE_TOKEN = FB_SYS_TOKEN;
       return;
     }
     if(data.data && data.data.length > 0) {
       const page = data.data.find(p => p.id === FB_PAGE_ID) || data.data[0];
       PAGE_TOKEN = page.access_token;
-      log(`Page token fetched successfully for: ${page.name}`);
-      log(`Page token length: ${PAGE_TOKEN.length} | starts: ${PAGE_TOKEN.substring(0,8)}`);
+      log(`Page token fetched for: ${page.name}`);
+      log(`Page token length: ${PAGE_TOKEN.length}`);
     } else {
-      log('No pages found, using system token directly');
+      log('No pages found, using system token');
       PAGE_TOKEN = FB_SYS_TOKEN;
     }
   } catch(e) {
-    log(`Exception fetching page token: ${e.message}`);
+    log(`Exception: ${e.message}`);
     PAGE_TOKEN = FB_SYS_TOKEN;
   }
 }
 
-async function generateCaption(post, style, utm) {
-  const prompt = `Write a compelling Facebook post caption for USA pet owners.
+async function generateCaption(post, style) {
+  const prompt = `Write a Facebook post caption for USA pet owners.
 Title: "${post.title}"
 Category: ${post.cat}
 Style: ${style}
 Rules:
-- First line: ALL CAPS heading (the title rewritten as a punchy hook, max 8 words)
+- First line: ALL CAPS punchy headline (max 8 words, rewrite the title as a hook)
 - Blank line
-- 2-3 sentences: SEO-optimized, warm and trustworthy tone, 2-3 relevant emojis
-- NO hashtags
-- Do NOT include any URL or link in your response — the link will be added separately
-
-Return caption text ONLY (heading + body), nothing else.`;
+- 2-3 sentences: SEO-optimized, warm tone, 2-3 relevant emojis
+- NO hashtags, NO URLs (link added separately)
+Return caption text ONLY.`;
 
   const body = JSON.stringify({
     model: "claude-sonnet-4-5",
-    max_tokens: 400,
-    messages: [{role:"user",content:prompt}]
+    max_tokens: 350,
+    messages: [{role:"user", content:prompt}]
   });
 
   const options = {
@@ -219,21 +152,50 @@ Return caption text ONLY (heading + body), nothing else.`;
   return data.content[0].text.trim();
 }
 
-// Post with image (photo post) — preferred format
-// Append the visible URL line to every caption
-function appendLink(caption, utm, post) {
+// Pre-scrape OG image from URL using Facebook's own scraper API
+// This tells FB to crawl the page and extract the image — no Railway network issue
+async function getFBScrapedImage(utm) {
+  log(`Asking Facebook to scrape image from: ${utm.substring(0,60)}...`);
+  const encodedUrl = encodeURIComponent(utm);
+  const options = {
+    hostname: 'graph.facebook.com',
+    path: `/v19.0/?id=${encodedUrl}&scrape=true&access_token=${PAGE_TOKEN}`,
+    method: 'POST',
+    headers: { 'Content-Length': 0 }
+  };
+  try {
+    const data = await apiRequest(options, '');
+    if(data.og_object && data.og_object.image && data.og_object.image[0]) {
+      const imgUrl = data.og_object.image[0].url || data.og_object.image[0].secure_url;
+      log(`FB scraped image: ${imgUrl ? imgUrl.substring(0,70) : 'none'}`);
+      return imgUrl || null;
+    }
+    if(data.image && data.image[0]) {
+      const imgUrl = data.image[0].url || data.image[0].secure_url;
+      log(`FB scraped image (alt): ${imgUrl ? imgUrl.substring(0,70) : 'none'}`);
+      return imgUrl || null;
+    }
+    log(`FB scrape result: no image found. Keys: ${Object.keys(data).join(', ')}`);
+    return null;
+  } catch(e) {
+    log(`FB scrape error: ${e.message}`);
+    return null;
+  }
+}
+
+// Build full caption with visible URL line
+function buildFullCaption(caption, utm, post) {
   const siteLine = post.aff ? '' : '\n\nonehealthglobe.com';
   return `${caption}\n\n🔗 For the full guide, visit: ${utm}${siteLine}`;
 }
 
-// Photo post — image is clickable to UTM url via the `link` field
-async function publishWithImage(caption, imageUrl, utm, post) {
-  log(`Posting with image: ${imageUrl.substring(0,60)}...`);
-  const fullCaption = appendLink(caption, utm, post);
+// Photo post — image clickable, opens UTM url
+async function publishWithImage(fullCaption, imageUrl, utm) {
+  log(`Publishing photo post...`);
   const body = JSON.stringify({
-    caption: fullCaption,   // text shown under the photo
-    url: imageUrl,          // the image to display
-    link: utm,              // clicking the image opens this URL
+    caption: fullCaption,
+    url: imageUrl,
+    link: utm,
     published: true,
     access_token: PAGE_TOKEN
   });
@@ -251,10 +213,9 @@ async function publishWithImage(caption, imageUrl, utm, post) {
   return data.id || data.post_id;
 }
 
-// Fallback: text + link card post (no standalone image)
-async function publishLinkPost(caption, utm, post) {
-  log('Falling back to link post (no image)...');
-  const fullCaption = appendLink(caption, utm, post);
+// Fallback: link post — FB auto-shows OG image as large card
+async function publishLinkPost(fullCaption, utm) {
+  log('Publishing link post (FB will show OG image card)...');
   const body = JSON.stringify({
     message: fullCaption,
     link: utm,
@@ -280,7 +241,7 @@ async function runPost() {
     return;
   }
   if(!PAGE_TOKEN) {
-    log('No page token yet — fetching...');
+    log('No page token — fetching...');
     await fetchPageToken();
   }
 
@@ -291,26 +252,26 @@ async function runPost() {
   log(`START — P${String(post.id).padStart(2,'0')}: ${post.title}`);
 
   try {
-    // Generate AI caption (heading + body only, no URL — appended separately)
-    const caption = await generateCaption(post, style, utm);
+    const caption = await generateCaption(post, style);
     log(`Caption ready (${caption.length} chars)`);
+    const fullCaption = buildFullCaption(caption, utm, post);
 
-    // Fetch OG image from the post URL
-    const ogImage = await fetchOGImage(post.url);
+    // Use Facebook's own scraper to get the OG image (bypasses Railway network block)
+    const imageUrl = await getFBScrapedImage(utm);
 
     let postId;
-    if(ogImage) {
+    if(imageUrl) {
       try {
-        postId = await publishWithImage(caption, ogImage, utm, post);
+        postId = await publishWithImage(fullCaption, imageUrl, utm);
         log(`SUCCESS (photo post) — FB Post ID: ${postId}`);
       } catch(imgErr) {
         log(`Photo post failed: ${imgErr.message} — falling back to link post`);
-        postId = await publishLinkPost(caption, utm, post);
+        postId = await publishLinkPost(fullCaption, utm);
         log(`SUCCESS (link post fallback) — FB Post ID: ${postId}`);
       }
     } else {
-      postId = await publishLinkPost(caption, utm, post);
-      log(`SUCCESS (link post, no OG image) — FB Post ID: ${postId}`);
+      postId = await publishLinkPost(fullCaption, utm);
+      log(`SUCCESS (link post, FB shows OG card) — FB Post ID: ${postId}`);
     }
 
     totalPosted++;
@@ -320,7 +281,7 @@ async function runPost() {
   } catch(err) {
     log(`ERROR — ${err.message}`);
     if(err.message.includes('token') || err.message.includes('OAuthException')) {
-      log('Token error detected — refreshing page token...');
+      log('Token error — refreshing...');
       await fetchPageToken();
     }
     postIndex++;
@@ -359,7 +320,7 @@ h1{color:#2dff8e;}
 .badge{background:#1a2e20;border:1px solid #2dff8e;border-radius:4px;padding:2px 8px;font-size:11px;color:#2dff8e;margin-left:8px;}
 </style></head>
 <body>
-<h1>🐾 OHG Pet Autopilot v5 <span class="badge">+Image Posts</span></h1>
+<h1>🐾 OHG Pet Autopilot v5 <span class="badge">FB Scrape + Image</span></h1>
 <p style="color:#4a6652;font-size:13px">Auto-refreshes every 30s | ${est.toLocaleString('en-US',{timeZone:'America/New_York'})} EST</p>
 <div>
 <div class="stat"><div class="sv">${totalPosted}</div><div class="sl">Published</div></div>
@@ -369,7 +330,7 @@ h1{color:#2dff8e;}
 </div>
 <h3 style="color:#7a9e85;margin-top:20px">Next: P${String(nextPost.id).padStart(2,'0')} — ${nextPost.title}</h3>
 <h3 style="color:#7a9e85;margin-top:16px">Log</h3>
-<div class="log">${logs.map(l=>`<div style="color:${l.includes('SUCCESS')?'#2dff8e':l.includes('ERROR')?'#ff5252':l.includes('SKIP')?'#ffb830':l.includes('OG image')?'#64b5f6':'#7a9e85'}">${l}</div>`).join('')}</div>
+<div class="log">${logs.map(l=>`<div style="color:${l.includes('SUCCESS')?'#2dff8e':l.includes('ERROR')?'#ff5252':l.includes('SKIP')?'#ffb830':'#7a9e85'}">${l}</div>`).join('')}</div>
 </body></html>`;
   res.writeHead(200,{'Content-Type':'text/html'});
   res.end(html);
