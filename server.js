@@ -4,9 +4,10 @@ const http = require('http');
 // ══════════════════════════════════════════════
 // CONFIG — loaded from environment variables
 // ══════════════════════════════════════════════
-const FB_TOKEN    = process.env.FB_TOKEN || '';
-const FB_PAGE_ID  = process.env.FB_PAGE_ID || '1593329474221951';
-const CLAUDE_KEY  = process.env.CLAUDE_KEY || '';
+// Sanitize tokens — remove any quotes, spaces, newlines that Railway may inject
+const FB_TOKEN    = (process.env.FB_TOKEN || '').replace(/['"  \n\r\t]/g, '').trim();
+const FB_PAGE_ID  = (process.env.FB_PAGE_ID || '1593329474221951').replace(/['"  \n\r\t]/g, '').trim();
+const CLAUDE_KEY  = (process.env.CLAUDE_KEY || '').replace(/['"  \n\r\t]/g, '').trim();
 const BASE_URL    = process.env.BASE_URL || 'https://onehealthglobe.com';
 const UTM_CAMP    = process.env.UTM_CAMP || 'pet_daily';
 const INTERVAL_MS = parseInt(process.env.INTERVAL_MS || '3600000'); // 1 hour default
@@ -182,6 +183,7 @@ async function runPost() {
 // SCHEDULER
 // ══════════════════════════════════════════════
 log('OHG Pet Autopilot Server starting...');
+log(`FB token length: ${FB_TOKEN.length} | First 10: ${FB_TOKEN.substring(0,10)} | Last 5: ${FB_TOKEN.slice(-5)}`);
 log(`Config: PAGE=${FB_PAGE_ID} | INTERVAL=${INTERVAL_MS/60000}min | HOURS=${ACTIVE_FROM}-${ACTIVE_TO} EST`);
 log(`Claude key: ${CLAUDE_KEY ? 'SET' : 'MISSING'}`);
 log(`FB token: ${FB_TOKEN ? 'SET' : 'MISSING'}`);
