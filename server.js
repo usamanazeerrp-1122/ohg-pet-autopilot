@@ -1,22 +1,15 @@
 const https = require('https');
 const http = require('http');
 
-// ══════════════════════════════════════════════
-// CONFIG — loaded from environment variables
-// ══════════════════════════════════════════════
-// Sanitize tokens — remove any quotes, spaces, newlines that Railway may inject
-const FB_TOKEN    = (process.env.FB_TOKEN || '').replace(/['"  \n\r\t]/g, '').trim();
-const FB_PAGE_ID  = (process.env.FB_PAGE_ID || '1593329474221951').replace(/['"  \n\r\t]/g, '').trim();
-const CLAUDE_KEY  = (process.env.CLAUDE_KEY || '').replace(/['"  \n\r\t]/g, '').trim();
-const BASE_URL    = process.env.BASE_URL || 'https://onehealthglobe.com';
-const UTM_CAMP    = process.env.UTM_CAMP || 'pet_daily';
-const INTERVAL_MS = parseInt(process.env.INTERVAL_MS || '3600000'); // 1 hour default
-const ACTIVE_FROM = parseInt(process.env.ACTIVE_FROM || '8');  // 8 AM EST
-const ACTIVE_TO   = parseInt(process.env.ACTIVE_TO   || '22'); // 10 PM EST
+const FB_SYS_TOKEN = (process.env.FB_TOKEN || '').trim().replace(/['"]/g,'');
+const FB_PAGE_ID   = (process.env.FB_PAGE_ID || '1593329474221951').trim().replace(/['"]/g,'');
+const CLAUDE_KEY   = (process.env.CLAUDE_KEY || '').trim().replace(/['"]/g,'');
+const BASE_URL     = (process.env.BASE_URL || 'https://onehealthglobe.com').trim().replace(/['"]/g,'');
+const UTM_CAMP     = (process.env.UTM_CAMP || 'pet_daily').trim().replace(/['"]/g,'');
+const INTERVAL_MS  = parseInt((process.env.INTERVAL_MS || '3600000').replace(/['"]/g,''));
+const ACTIVE_FROM  = parseInt((process.env.ACTIVE_FROM || '8').replace(/['"]/g,''));
+const ACTIVE_TO    = parseInt((process.env.ACTIVE_TO || '22').replace(/['"]/g,''));
 
-// ══════════════════════════════════════════════
-// 31 POSTS
-// ══════════════════════════════════════════════
 const POSTS = [
   {id:1,title:"Why Dog Paw Health Matters",cat:"Dog Care",url:`${BASE_URL}/dog-paw-scanner/`,aff:false},
   {id:2,title:"Quality Pet Products for Every Owner",cat:"Products",url:`${BASE_URL}/products/`,aff:false},
@@ -56,6 +49,7 @@ let postIndex = 0;
 let styleIndex = 0;
 let totalPosted = 0;
 let logs = [];
+let PAGE_TOKEN = ''; // will be fetched on startup
 
 function log(msg) {
   const t = new Date().toISOString();
@@ -91,6 +85,40 @@ function apiRequest(options, body) {
     if(body) req.write(body);
     req.end();
   });
+}
+
+// Fetch Page Access Token using the System User token
+async function fetchPageToken() {
+  log('Fetching Page Access Token from Graph API...');
+  log(`System token length: ${FB_SYS_TOKEN.length} | starts: ${FB_SYS_TOKEN.substring(0,8)}`);
+  
+  const options = {
+    hostname: 'graph.facebook.com',
+    path: `/v19.0/me/accounts?access_token=${FB_SYS_TOKEN}`,
+    method: 'GET'
+  };
+  
+  try {
+    const data = await apiRequest(options, null);
+    if(data.error) {
+      log(`ERROR fetching page token: ${data.error.message}`);
+      log('Falling back to system token directly...');
+      PAGE_TOKEN = FB_SYS_TOKEN;
+      return;
+    }
+    if(data.data && data.data.length > 0) {
+      const page = data.data.find(p => p.id === FB_PAGE_ID) || data.data[0];
+      PAGE_TOKEN = page.access_token;
+      log(`Page token fetched successfully for: ${page.name}`);
+      log(`Page token length: ${PAGE_TOKEN.length} | starts: ${PAGE_TOKEN.substring(0,8)}`);
+    } else {
+      log('No pages found, using system token directly');
+      PAGE_TOKEN = FB_SYS_TOKEN;
+    }
+  } catch(e) {
+    log(`Exception fetching page token: ${e.message}`);
+    PAGE_TOKEN = FB_SYS_TOKEN;
+  }
 }
 
 async function generateCaption(post, style, utm) {
@@ -129,7 +157,7 @@ async function publishToFacebook(caption, link) {
   const body = JSON.stringify({
     message: caption,
     link: link,
-    access_token: FB_TOKEN
+    access_token: PAGE_TOKEN
   });
 
   const options = {
@@ -149,8 +177,12 @@ async function publishToFacebook(caption, link) {
 
 async function runPost() {
   if(!isActiveHour()) {
-    log(`SKIP — Outside active hours (${ACTIVE_FROM}:00–${ACTIVE_TO}:00 EST)`);
+    log(`SKIP — Outside active hours (${ACTIVE_FROM}:00-${ACTIVE_TO}:00 EST)`);
     return;
+  }
+  if(!PAGE_TOKEN) {
+    log('No page token yet — fetching...');
+    await fetchPageToken();
   }
 
   const post = POSTS[postIndex % 31];
@@ -158,14 +190,10 @@ async function runPost() {
   const utm = buildUTM(post);
 
   log(`START — P${String(post.id).padStart(2,'0')}: ${post.title}`);
-  log(`Style: ${style} | UTM: ${utm.substring(0,60)}...`);
 
   try {
-    log('Generating caption via Claude AI...');
     const caption = await generateCaption(post, style, utm);
     log(`Caption ready (${caption.length} chars)`);
-
-    log('Publishing to Facebook Page...');
     const postId = await publishToFacebook(caption, utm);
     log(`SUCCESS — FB Post ID: ${postId}`);
     totalPosted++;
@@ -174,60 +202,59 @@ async function runPost() {
     log(`Total posted: ${totalPosted} | Next: P${String(POSTS[postIndex%31].id).padStart(2,'0')}`);
   } catch(err) {
     log(`ERROR — ${err.message}`);
+    // If token expired, refresh it
+    if(err.message.includes('token') || err.message.includes('OAuthException')) {
+      log('Token error detected — refreshing page token...');
+      await fetchPageToken();
+    }
     postIndex++;
     styleIndex++;
   }
 }
 
-// ══════════════════════════════════════════════
-// SCHEDULER
-// ══════════════════════════════════════════════
-log('OHG Pet Autopilot Server starting...');
-log(`FB token length: ${FB_TOKEN.length} | First 10: ${FB_TOKEN.substring(0,10)} | Last 5: ${FB_TOKEN.slice(-5)}`);
+// STARTUP
+log('OHG Pet Autopilot Server v4 starting...');
 log(`Config: PAGE=${FB_PAGE_ID} | INTERVAL=${INTERVAL_MS/60000}min | HOURS=${ACTIVE_FROM}-${ACTIVE_TO} EST`);
-log(`Claude key: ${CLAUDE_KEY ? 'SET' : 'MISSING'}`);
-log(`FB token: ${FB_TOKEN ? 'SET' : 'MISSING'}`);
+log(`System token: ${FB_SYS_TOKEN ? 'SET (len='+FB_SYS_TOKEN.length+')' : 'MISSING'}`);
+log(`Claude key: ${CLAUDE_KEY ? 'SET (len='+CLAUDE_KEY.length+')' : 'MISSING'}`);
 
-// First post after 10 seconds
-setTimeout(runPost, 10000);
-// Then every INTERVAL_MS
-setInterval(runPost, INTERVAL_MS);
-log(`Scheduler active — first post in 10 seconds, then every ${INTERVAL_MS/60000} minutes`);
+// Fetch page token first, then start posting
+fetchPageToken().then(() => {
+  log(`Scheduler active — first post in 15 seconds, then every ${INTERVAL_MS/60000} minutes`);
+  setTimeout(runPost, 15000);
+  setInterval(runPost, INTERVAL_MS);
+});
 
-// ══════════════════════════════════════════════
-// WEB DASHBOARD (so Railway keeps it alive)
-// ══════════════════════════════════════════════
+// Dashboard
 const PORT = process.env.PORT || 3000;
 http.createServer((req, res) => {
   const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
   const nextPost = POSTS[postIndex % 31];
   const html = `<!DOCTYPE html>
-<html><head><title>OHG Pet Autopilot</title>
+<html><head><title>OHG Pet Autopilot v4</title>
 <meta http-equiv="refresh" content="30">
 <style>
-body{font-family:Arial,sans-serif;background:#0a0f0d;color:#e8f5ec;padding:20px;max-width:900px;margin:0 auto;}
-h1{color:#2dff8e;font-size:22px;}
+body{font-family:Arial;background:#0a0f0d;color:#e8f5ec;padding:20px;max-width:900px;margin:0 auto;}
+h1{color:#2dff8e;}
 .stat{display:inline-block;background:#111a15;border:1px solid #1e2e23;border-radius:8px;padding:12px 20px;margin:6px;text-align:center;}
 .sv{font-size:28px;font-weight:bold;color:#2dff8e;}
 .sl{font-size:11px;color:#4a6652;margin-top:4px;}
-.ok{color:#2dff8e;} .err{color:#ff5252;} .warn{color:#ffb830;}
-.log{background:#000;border-radius:8px;padding:14px;font-family:monospace;font-size:11px;max-height:400px;overflow-y:auto;}
+.log{background:#000;border-radius:8px;padding:14px;font-family:monospace;font-size:11px;max-height:500px;overflow-y:auto;}
 .log div{padding:2px 0;border-bottom:1px solid #111;}
 </style></head>
 <body>
-<h1>🐾 OHG Pet Autopilot — Live Dashboard</h1>
-<p style="color:#4a6652;font-size:13px">Auto-refreshes every 30 seconds | ${est.toLocaleString('en-US',{timeZone:'America/New_York'})} EST</p>
+<h1>🐾 OHG Pet Autopilot v4</h1>
+<p style="color:#4a6652;font-size:13px">Auto-refreshes every 30s | ${est.toLocaleString('en-US',{timeZone:'America/New_York'})} EST</p>
 <div>
-<div class="stat"><div class="sv ok">${totalPosted}</div><div class="sl">Posts Published</div></div>
-<div class="stat"><div class="sv">${postIndex % 31 + 1}/31</div><div class="sl">Current Post</div></div>
-<div class="stat"><div class="sv ok">${isActiveHour()?'ACTIVE':'SLEEPING'}</div><div class="sl">Status</div></div>
-<div class="stat"><div class="sv">${INTERVAL_MS/60000}m</div><div class="sl">Interval</div></div>
+<div class="stat"><div class="sv">${totalPosted}</div><div class="sl">Published</div></div>
+<div class="stat"><div class="sv">${postIndex%31+1}/31</div><div class="sl">Post Index</div></div>
+<div class="stat"><div class="sv">${isActiveHour()?'ACTIVE':'SLEEPING'}</div><div class="sl">Status</div></div>
+<div class="stat"><div class="sv">${PAGE_TOKEN?'OK':'MISSING'}</div><div class="sl">Page Token</div></div>
 </div>
-<h3 style="margin-top:20px;color:#7a9e85">Next Post</h3>
-<p>P${String(nextPost.id).padStart(2,'0')}: <strong>${nextPost.title}</strong> (${nextPost.cat})</p>
-<h3 style="margin-top:20px;color:#7a9e85">Activity Log</h3>
-<div class="log">${logs.map(l=>`<div>${l.replace(/SUCCESS/g,'<span class="ok">SUCCESS</span>').replace(/ERROR/g,'<span class="err">ERROR</span>').replace(/SKIP/g,'<span class="warn">SKIP</span>')}</div>`).join('')}</div>
+<h3 style="color:#7a9e85;margin-top:20px">Next: P${String(nextPost.id).padStart(2,'0')} — ${nextPost.title}</h3>
+<h3 style="color:#7a9e85;margin-top:16px">Log</h3>
+<div class="log">${logs.map(l=>`<div style="color:${l.includes('SUCCESS')?'#2dff8e':l.includes('ERROR')?'#ff5252':l.includes('SKIP')?'#ffb830':'#7a9e85'}">${l}</div>`).join('')}</div>
 </body></html>`;
   res.writeHead(200,{'Content-Type':'text/html'});
   res.end(html);
-}).listen(PORT, () => log(`Dashboard running on port ${PORT}`));
+}).listen(PORT, () => log(`Dashboard on port ${PORT}`));
