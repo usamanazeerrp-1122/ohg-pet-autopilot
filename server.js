@@ -4,6 +4,10 @@ const http = require('http');
 const FB_SYS_TOKEN = (process.env.FB_TOKEN || '').trim().replace(/['"]/g,'');
 const FB_PAGE_ID   = (process.env.FB_PAGE_ID || '1593329474221951').trim().replace(/['"]/g,'');
 const CLAUDE_KEY   = (process.env.CLAUDE_KEY || '').trim().replace(/['"]/g,'');
+// Separate token for group posting — needs publish_to_groups permission
+// Get from: developers.facebook.com/tools/explorer → check publish_to_groups + groups_access_member_info
+// Add to Railway as GROUP_TOKEN variable. Falls back to FB_TOKEN if not set.
+const GROUP_TOKEN  = (process.env.GROUP_TOKEN || process.env.FB_TOKEN || '').trim().replace(/['"]/g,'');
 const BASE_URL     = (process.env.BASE_URL || 'https://onehealthglobe.com').trim().replace(/['"]/g,'');
 const UTM_CAMP     = (process.env.UTM_CAMP || 'pet_daily').trim().replace(/['"]/g,'');
 const INTERVAL_MS  = parseInt((process.env.INTERVAL_MS || '3600000').replace(/['"]/g,''));
@@ -196,7 +200,7 @@ async function publishToPage(fullCaption, imageUrl, utm) {
 
 // ── PUBLISH TO ONE GROUP ─────────────────────────────────────────────────────
 async function publishToGroup(group, fullCaption, utm) {
-  const body = JSON.stringify({ message:fullCaption, link:utm, access_token:FB_SYS_TOKEN });
+  const body = JSON.stringify({ message:fullCaption, link:utm, access_token:GROUP_TOKEN });
   const options = { hostname:'graph.facebook.com', path:`/v19.0/${group.id}/feed`, method:'POST',
     headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body)} };
   const data = await apiRequest(options, body);
@@ -311,7 +315,7 @@ async function retryPendingGroupPosts() {
     // Check if post still exists (approved) or was deleted (rejected)
     try {
       const options = { hostname:'graph.facebook.com',
-        path:`/v19.0/${p.postId}?fields=id&access_token=${FB_SYS_TOKEN}`, method:'GET' };
+        path:`/v19.0/${p.postId}?fields=id&access_token=${GROUP_TOKEN}`, method:'GET' };
       const data = await apiRequest(options, null);
 
       if(data.id) {
@@ -397,6 +401,7 @@ async function runPost() {
 log('OHG Pet Autopilot Server v5 starting...');
 log(`Posts: 31 | Groups: ${PET_GROUPS.length} | Interval: ${INTERVAL_MS/60000}min | Hours: ${ACTIVE_FROM}-${ACTIVE_TO} EST`);
 log(`Token: ${FB_SYS_TOKEN?'SET len='+FB_SYS_TOKEN.length:'MISSING'} | Claude: ${CLAUDE_KEY?'SET':'MISSING'}`);
+log(`Group token: ${GROUP_TOKEN && GROUP_TOKEN!==FB_SYS_TOKEN?'SEPARATE (len='+GROUP_TOKEN.length+')':'using FB_TOKEN (no publish_to_groups yet)'}`);
 
 fetchPageToken().then(() => {
   log(`Scheduler ready — first post in 15s`);
@@ -409,6 +414,61 @@ fetchPageToken().then(() => {
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 http.createServer((req, res) => {
+  // ── JSON STATS API (fetched by external dashboard every 10s) ──
+  if(req.url === '/api/stats') {
+    const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
+    const nextPost = POSTS[postIndex % 31];
+    const activeG  = PET_GROUPS.filter(g => !groupStats[g.id].permanent).length;
+    const bannedG  = PET_GROUPS.filter(g => groupStats[g.id].permanent).length;
+    const coolG    = PET_GROUPS.filter(g => groupStats[g.id].cooldown && !groupStats[g.id].permanent).length;
+    const nextGroup = pickNextGroup() || PET_GROUPS[0];
+    const payload = {
+      server:         'OHG Pet Autopilot v5',
+      time_est:       est.toISOString(),
+      is_active:      isActiveHour(),
+      post_index:     postIndex % 31 + 1,
+      round:          Math.floor(postIndex / 31) + 1,
+      total_page:     totalPosted,
+      total_group:    totalGroupPosted,
+      total_comments: totalComments,
+      pending_count:  pendingGroupPosts.length,
+      groups_total:   PET_GROUPS.length,
+      groups_active:  activeG,
+      groups_banned:  bannedG,
+      groups_cooldown:coolG,
+      groups_used_cycle: postedGroupsThisCycle.size,
+      next_post: { id: nextPost.id, title: nextPost.title, cat: nextPost.cat },
+      next_group: { id: nextGroup.id, name: nextGroup.name },
+      page_token_len: PAGE_TOKEN ? PAGE_TOKEN.length : 0,
+      sys_token_len:  FB_SYS_TOKEN ? FB_SYS_TOKEN.length : 0,
+      group_token_set: GROUP_TOKEN && GROUP_TOKEN !== FB_SYS_TOKEN,
+      claude_key_set: CLAUDE_KEY ? true : false,
+      pending_posts: pendingGroupPosts.map(p => ({
+        title:      p.title,
+        group_name: p.groupName,
+        age_min:    Math.round((Date.now() - p.postedAt) / 60000),
+        commented:  p.commentFired || false,
+        tried:      (p.triedGroups || []).length
+      })),
+      group_stats: PET_GROUPS.map(g => ({
+        id:        g.id,
+        name:      g.name,
+        success:   groupStats[g.id].success,
+        fail:      groupStats[g.id].fail,
+        cooldown:  groupStats[g.id].cooldown,
+        permanent: groupStats[g.id].permanent || false,
+        is_next:   nextGroup && g.id === nextGroup.id
+      })),
+      recent_logs: logs.slice(0, 60)
+    };
+    res.writeHead(200, {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      'Cache-Control': 'no-cache'
+    });
+    res.end(JSON.stringify(payload));
+    return;
+  }
   const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
   const nextPost = POSTS[postIndex % 31];
   const nextGroup = pickNextGroup() || PET_GROUPS[0];
@@ -451,7 +511,8 @@ th{color:#2dff8e;background:#0d1a10;}
   <div class="stat"><div class="sv">${activeGroups.length}</div><div class="sl">Active Groups</div></div>
   <div class="stat"><div class="sv">${permanentGroups.length}</div><div class="sl">⛔ No Access</div></div>
   <div class="stat"><div class="sv">${isActiveHour()?'🟢':'🌙'}</div><div class="sl">${isActiveHour()?'ACTIVE':'SLEEPING'}</div></div>
-  <div class="stat"><div class="sv">${PAGE_TOKEN?'✅':'⚠️'}</div><div class="sl">Token</div></div>
+  <div class="stat"><div class="sv">${PAGE_TOKEN?'✅':'⚠️'}</div><div class="sl">Page Token</div></div>
+  <div class="stat"><div class="sv">${GROUP_TOKEN&&GROUP_TOKEN!==FB_SYS_TOKEN?'✅':'⚠️'}</div><div class="sl">Group Token</div></div>
 </div>
 
 <div style="margin:10px 0;padding:10px;background:#0d1a10;border-radius:8px;border:1px solid #1e2e23">
@@ -512,7 +573,7 @@ async function findViralPostInGroup(groupId) {
     // Get recent group posts sorted by engagement
     const options = {
       hostname: 'graph.facebook.com',
-      path: `/v19.0/${groupId}/feed?fields=id,message,likes.summary(true),comments.summary(true),created_time&limit=10&access_token=${FB_SYS_TOKEN}`,
+      path: `/v19.0/${groupId}/feed?fields=id,message,likes.summary(true),comments.summary(true),created_time&limit=10&access_token=${GROUP_TOKEN}`,
       method: 'GET'
     };
     const data = await apiRequest(options, null);
@@ -538,7 +599,7 @@ async function findViralPostInGroup(groupId) {
 async function postCommentOnViral(viralPostId, commentText) {
   const body = JSON.stringify({
     message: commentText,
-    access_token: FB_SYS_TOKEN
+    access_token: GROUP_TOKEN
   });
   const options = {
     hostname: 'graph.facebook.com',
