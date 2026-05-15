@@ -102,7 +102,7 @@ Rules: Hook opening line, 3-4 sentences total, 2-3 relevant emojis, clear CTA wi
 Return caption text ONLY, nothing else.`;
 
   const body = JSON.stringify({
-    model: "claude-sonnet-4-20250514",
+    model: "claude-sonnet-4-5",
     max_tokens: 350,
     messages: [{role:"user",content:prompt}]
   });
