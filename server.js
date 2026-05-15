@@ -222,16 +222,24 @@ function pickNextGroup(triedIds = []) {
   let pick = PET_GROUPS.find(g =>
     !triedIds.includes(g.id) &&
     !groupStats[g.id].cooldown &&
+    !groupStats[g.id].permanent &&
     !postedGroupsThisCycle.has(g.id)
   );
   if(pick) return pick;
 
   // Priority 2: not tried, not on cooldown (may repeat this cycle)
-  pick = PET_GROUPS.find(g => !triedIds.includes(g.id) && !groupStats[g.id].cooldown);
+  pick = PET_GROUPS.find(g =>
+    !triedIds.includes(g.id) &&
+    !groupStats[g.id].cooldown &&
+    !groupStats[g.id].permanent
+  );
   if(pick) return pick;
 
-  // Priority 3: not tried, even if on cooldown (last resort)
-  pick = PET_GROUPS.find(g => !triedIds.includes(g.id));
+  // Priority 3: not tried, temporary cooldown only (skip permanent bans always)
+  pick = PET_GROUPS.find(g =>
+    !triedIds.includes(g.id) &&
+    !groupStats[g.id].permanent
+  );
   if(pick) return pick;
 
   return null; // all groups tried
@@ -268,10 +276,19 @@ async function postToGroupWithRetry(fullCaption, imageUrl, utm, post) {
     } catch(e) {
       groupStats[group.id].fail++;
       groupStats[group.id].lastFail = Date.now();
-      log(`⚠️ GROUP [${attempts}] ${group.name} FAILED: ${e.message}`);
+      log(`⚠️ GROUP [${attempts}] ${group.name} FAILED: ${e.message.substring(0,80)}`);
 
-      // Put on cooldown if failed 3+ times
-      if(groupStats[group.id].fail >= 3) {
+      // Permanent ban: no permission / not a member — never retry this group
+      const isPermanent = e.message.includes('missing permissions') ||
+                          e.message.includes('does not exist') ||
+                          e.message.includes('not support this operation') ||
+                          e.message.includes('Invalid OAuth') ||
+                          e.message.includes('not a member');
+      if(isPermanent) {
+        groupStats[group.id].cooldown = true;
+        groupStats[group.id].permanent = true;
+        log(`🚫 ${group.name} PERMANENTLY skipped (not member / no permission)`);
+      } else if(groupStats[group.id].fail >= 3) {
         groupStats[group.id].cooldown = true;
         log(`🚫 ${group.name} on 24h cooldown (3 failures)`);
       }
@@ -397,6 +414,8 @@ http.createServer((req, res) => {
   const nextGroup = pickNextGroup() || PET_GROUPS[0];
   const round = Math.floor(postIndex / 31) + 1;
   const cooldownGroups = PET_GROUPS.filter(g => groupStats[g.id].cooldown);
+  const permanentGroups = PET_GROUPS.filter(g => groupStats[g.id].permanent);
+  const activeGroups = PET_GROUPS.filter(g => !groupStats[g.id].permanent);
 
   const html = `<!DOCTYPE html>
 <html><head><title>OHG Pet Autopilot v5</title><meta http-equiv="refresh" content="30">
@@ -429,7 +448,8 @@ th{color:#2dff8e;background:#0d1a10;}
   <div class="stat"><div class="sv">${postIndex%31+1}/31</div><div class="sl">Post Index</div></div>
   <div class="stat"><div class="sv">R${round}</div><div class="sl">Round</div></div>
   <div class="stat"><div class="sv">${pendingGroupPosts.length}</div><div class="sl">Pending Review</div></div>
-  <div class="stat"><div class="sv">${cooldownGroups.length}</div><div class="sl">On Cooldown</div></div>
+  <div class="stat"><div class="sv">${activeGroups.length}</div><div class="sl">Active Groups</div></div>
+  <div class="stat"><div class="sv">${permanentGroups.length}</div><div class="sl">⛔ No Access</div></div>
   <div class="stat"><div class="sv">${isActiveHour()?'🟢':'🌙'}</div><div class="sl">${isActiveHour()?'ACTIVE':'SLEEPING'}</div></div>
   <div class="stat"><div class="sv">${PAGE_TOKEN?'✅':'⚠️'}</div><div class="sl">Token</div></div>
 </div>
@@ -451,7 +471,7 @@ ${PET_GROUPS.map((g,i)=>{
   return `<tr style="${isNext?'background:#0a2a10':usedThisCycle?'color:#4a6652':''}">
     <td>${i+1}</td><td>${g.name}</td><td style="font-size:10px">${g.id}</td>
     <td class="ok">${s.success}</td><td class="${s.fail>0?'err':'ok'}">${s.fail}</td>
-    <td>${s.cooldown?'<span style="color:#ff5252">🚫 cooldown</span>':isNext?'<span class="ok">◀ NEXT</span>':usedThisCycle?'<span style="color:#4a6652">✓ used</span>':'<span class="ok">ready</span>'}</td>
+    <td>${s.permanent?'<span style="color:#666">⛔ not member</span>':s.cooldown?'<span style="color:#ff5252">🚫 cooldown</span>':isNext?'<span class="ok">◀ NEXT</span>':usedThisCycle?'<span style="color:#4a6652">✓ used</span>':'<span class="ok">ready</span>'}</td>
   </tr>`;
 }).join('')}
 </table>
