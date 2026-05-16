@@ -10,6 +10,9 @@ const UTM_CAMP     = (process.env.UTM_CAMP || 'pet_daily').trim().replace(/['"]/
 const INTERVAL_MS  = parseInt((process.env.INTERVAL_MS || '3600000').replace(/['"]/g,''));
 const ACTIVE_FROM  = parseInt((process.env.ACTIVE_FROM || '0').replace(/['"]/g,''));
 const ACTIVE_TO    = parseInt((process.env.ACTIVE_TO || '23').replace(/['"]/g,''));
+const GMAIL_USER   = (process.env.GMAIL_USER || 'usamanazeerrp1@gmail.com').trim();
+const GMAIL_PASS   = (process.env.GMAIL_PASS || '').trim().replace(/\s/g,'');
+const NOTIFY_EMAIL = (process.env.NOTIFY_EMAIL || 'usamanazeerrp1@gmail.com').trim();
 
 // ── 51 REAL PET GROUPS (verified member) ────────────────────────────────────
 const PET_GROUPS = [
@@ -375,6 +378,8 @@ async function runPost() {
       const pageId = await publishToPage(fullCaption, imageUrl, utm);
       log(`✅ PAGE — ID: ${pageId}`);
       totalPosted++;
+      lastPagePostUrl = `https://www.facebook.com/${FB_PAGE_ID}/posts/${pageId.split('_')[1]||pageId}`;
+      lastPagePostTitle = post.title;
     } catch(e) { log(`❌ PAGE failed: ${e.message}`); }
 
     await postToGroupWithRetry(fullCaption, imageUrl, utm, post);
@@ -392,11 +397,112 @@ async function runPost() {
   }
 }
 
+// ── EMAIL NOTIFICATION SYSTEM ────────────────────────────────────────────────
+let lastPagePostUrl = '';
+let lastPagePostTitle = '';
+let lastEmailDay = -1;
+
+function sendEmail(subject, htmlBody) {
+  return new Promise((resolve) => {
+    if(!GMAIL_PASS) { log('⚠️ Email skipped — GMAIL_PASS not set'); resolve(false); return; }
+    const tls = require('tls');
+    const authPlain = Buffer.from(`\0${GMAIL_USER}\0${GMAIL_PASS}`).toString('base64');
+    const msgLines = [
+      `From: OHG Autopilot <${GMAIL_USER}>`,
+      `To: ${NOTIFY_EMAIL}`,
+      `Subject: ${subject}`,
+      'MIME-Version: 1.0',
+      'Content-Type: text/html; charset=utf-8',
+      '',
+      htmlBody
+    ];
+    const msg = msgLines.join('\r\n');
+    let step = 0;
+    const cmds = [
+      `EHLO railway\r\n`,
+      `AUTH PLAIN ${authPlain}\r\n`,
+      `MAIL FROM:<${GMAIL_USER}>\r\n`,
+      `RCPT TO:<${NOTIFY_EMAIL}>\r\n`,
+      `DATA\r\n`,
+      msg + '\r\n.\r\n',
+      `QUIT\r\n`
+    ];
+    const sock = tls.connect(465, 'smtp.gmail.com', {rejectUnauthorized:false}, () => {});
+    sock.on('data', d => {
+      const r = d.toString();
+      if(r.match(/^(220|250|235|354|221)/m)) {
+        if(r.includes('221')) { sock.destroy(); log('📧 Email sent OK: ' + subject); resolve(true); return; }
+        if(step < cmds.length) { sock.write(cmds[step++]); }
+      } else if(r.match(/^5\d\d/m)) {
+        log('📧 Email error: ' + r.substring(0,80));
+        sock.destroy(); resolve(false);
+      }
+    });
+    sock.on('error', e => { log('📧 SMTP error: ' + e.message); resolve(false); });
+    sock.on('connect', () => sock.write(cmds[step++]));
+  });
+}
+
+function buildGroupEmail(postUrl, postTitle) {
+  const activeGroups = PET_GROUPS.filter(g => !groupStats[g.id].permanent).slice(0, 20);
+  const rows = activeGroups.map((g, i) => `
+    <tr style="background:${i%2===0?'#fff':'#f8f9fa'}">
+      <td style="padding:8px 12px;border:1px solid #dee2e6;color:#666">${i+1}</td>
+      <td style="padding:8px 12px;border:1px solid #dee2e6">${g.name}</td>
+      <td style="padding:8px 12px;border:1px solid #dee2e6">
+        <a href="https://www.facebook.com/groups/${g.id}" style="color:#1877f2;text-decoration:none;font-weight:bold">Open Group →</a>
+      </td>
+    </tr>`).join('');
+
+  return `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;padding:20px;background:#f0f2f5">
+<div style="background:#0a0f0d;color:#2dff8e;padding:24px;border-radius:12px;text-align:center;margin-bottom:24px">
+  <h1 style="margin:0;font-size:24px">🐾 OHG Pet Autopilot</h1>
+  <p style="margin:8px 0 0;color:#7a9e85;font-size:14px">Daily Group Sharing Digest • ${new Date().toDateString()}</p>
+</div>
+<div style="background:#d4edda;border:1px solid #c3e6cb;border-radius:8px;padding:20px;margin-bottom:24px">
+  <h2 style="margin:0 0 12px;color:#155724;font-size:18px">📢 New Post Ready to Share!</h2>
+  <p style="margin:0 0 16px;color:#155724;font-size:16px"><strong>${postTitle}</strong></p>
+  <a href="${postUrl}" style="background:#1877f2;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block">View Page Post →</a>
+</div>
+<div style="background:white;border-radius:8px;padding:20px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+  <h3 style="margin:0 0 8px;color:#333">📋 Share to These Groups</h3>
+  <p style="margin:0 0 16px;color:#666;font-size:14px">⏱️ Takes only 5 minutes — open all tabs at once, then share one by one</p>
+  <table style="width:100%;border-collapse:collapse">
+    <tr style="background:#1877f2;color:white">
+      <th style="padding:10px 12px;border:1px solid #1877f2;text-align:left">#</th>
+      <th style="padding:10px 12px;border:1px solid #1877f2;text-align:left">Group</th>
+      <th style="padding:10px 12px;border:1px solid #1877f2;text-align:left">Action</th>
+    </tr>
+    ${rows}
+  </table>
+</div>
+<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:16px;margin-bottom:24px">
+  <strong>💡 How to share:</strong> Open the Page post → click <strong>Share</strong> → choose <strong>Share to a Group</strong> → select the group → Post!
+</div>
+<div style="background:white;border-radius:8px;padding:16px;font-size:12px;color:#666;text-align:center">
+  📊 Page Posts Today: ${totalPosted} | API Group Posts: ${totalGroupPosted}<br>
+  <a href="https://ohg-pet-autopilot-production.up.railway.app" style="color:#1877f2">View Live Dashboard</a> • onehealthglobe.com
+</div>
+</body></html>`;
+}
+
+async function checkAndSendDailyEmail() {
+  const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
+  const hour = est.getHours();
+  const day = est.getDate();
+  if(hour === 9 && lastEmailDay !== day && lastPagePostUrl) {
+    lastEmailDay = day;
+    const subject = `🐾 OHG Daily Share: "${lastPagePostTitle.substring(0,50)}"`;
+    await sendEmail(subject, buildGroupEmail(lastPagePostUrl, lastPagePostTitle));
+  }
+}
+
 // STARTUP
 log('OHG Pet Autopilot Server v5 starting...');
 log(`Posts: 31 | Groups: ${PET_GROUPS.length} | Interval: ${INTERVAL_MS/60000}min | Hours: ${ACTIVE_FROM}-${ACTIVE_TO} EST`);
 log(`Token: ${FB_SYS_TOKEN?'SET len='+FB_SYS_TOKEN.length:'MISSING'} | Claude: ${CLAUDE_KEY?'SET':'MISSING'}`);
 log(`Group token: ${GROUP_TOKEN && GROUP_TOKEN!==FB_SYS_TOKEN?'SEPARATE (len='+GROUP_TOKEN.length+')':'using FB_TOKEN (no publish_to_groups yet)'}`);
+log(`Email: ${GMAIL_PASS?'✅ configured → '+NOTIFY_EMAIL:'⚠️ GMAIL_PASS not set'}`);
 
 fetchPageToken().then(() => {
   log(`Scheduler ready — first post in 15s`);
@@ -404,6 +510,7 @@ fetchPageToken().then(() => {
   setInterval(runPost, INTERVAL_MS);
   setInterval(retryPendingGroupPosts, 4 * 3600000);
   setInterval(checkAndCommentFallback, 30 * 60000);
+  setInterval(checkAndSendDailyEmail, 60 * 60000); // check hourly for 9AM digest
 });
 
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
