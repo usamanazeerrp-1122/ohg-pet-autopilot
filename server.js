@@ -415,7 +415,7 @@ fetchPageToken().then(() => {
 const PORT = process.env.PORT || 3000;
 http.createServer((req, res) => {
   // ── JSON STATS API (fetched by external dashboard every 10s) ──
-  if(req.url === '/api/stats') {
+  if(req.url && req.url.startsWith('/auth/callback')) {     res.writeHead(200, {'Content-Type':'text/html'});     res.end(`<!DOCTYPE html><html><body style="background:#0a0f0d;color:#2dff8e;font-family:Arial;padding:40px;text-align:center"><h2>OHG Token Capture</h2><script>const t=new URLSearchParams(window.location.hash.substring(1)).get('access_token');if(t){document.body.innerHTML+='<p style="word-break:break-all;background:#111;padding:20px;border-radius:8px"><b>YOUR GROUP_TOKEN:</b><br>'+t+'</p><p>Copy above → paste into Railway as GROUP_TOKEN</p>';}else{document.body.innerHTML+='<p>No token found in URL</p>';}<\/script></body></html>`);     return;   }   if(req.url === '/api/stats') {
     const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
     const nextPost = POSTS[postIndex % 31];
     const activeG  = PET_GROUPS.filter(g => !groupStats[g.id].permanent).length;
