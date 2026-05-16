@@ -80,39 +80,335 @@ let postedGroupsThisCycle = new Set();
 
 let groupIndex = 0;
 
-// ── POSTS ───────────────────────────────────────────────────────────────────
+// ── POSTS — 62 REAL OHG URLS + PREMIUM IMAGE PROMPTS ───────────────────────
+// Image prompt rules: photorealistic, premium brand style, magazine quality,
+// warm natural lighting, proper composition, NOT cartoon, NOT illustration
 const POSTS = [
-  {id:1,  title:"Is Your Dog's Paw Trying to Tell You Something?",         cat:"Dog Care",    url:`${BASE_URL}/dog-paw-scanner/`,                                                                    imgPrompt:"close up healthy dog paw on grass, golden light, warm and caring, photorealistic",                                aff:false},
-  {id:2,  title:"Top Pet Products Every Owner Wishes They Had Sooner",      cat:"Products",    url:`${BASE_URL}/products/`,                                                                           imgPrompt:"happy dog and cat with pet care products on clean white background, bright colors",                                aff:false},
-  {id:3,  title:"The Nail Clipper That Makes Grooming Stress-Free",         cat:"Product",     url:"https://www.dhgate.com/product/led-light-pet-nail-clipper-with-amplification/1010092124.html",   imgPrompt:"dog nail clipper with LED light on wooden surface, product photography, clean",                                   aff:true},
-  {id:4,  title:"One Kit That Handles All Your Pet's Grooming Needs",       cat:"Product",     url:"https://www.dhgate.com/product/combs-dog-hair-remover-cat-brush-grooming/1028087374.html",       imgPrompt:"pet grooming kit laid out neatly, brushes and combs, professional product photo",                                aff:true},
-  {id:5,  title:"See What Your Dog Does When You're Not Home",              cat:"Product",     url:"https://www.dhgate.com/product/dog-collars-hd-1080p-wireless-collar-camera/1032506070.html",    imgPrompt:"dog wearing smart collar with camera outdoors, curious expression, sunny day",                                    aff:true},
-  {id:6,  title:"The 2-in-1 Pet Stroller That Changes Everything",          cat:"Product",     url:"https://bestchoiceproducts.com/products/2-in-1-pet-dog-bike-trailer",                           imgPrompt:"small dog in a pet stroller on a park path, happy owner, sunshine",                                              aff:true},
-  {id:7,  title:"8-Piece Grooming Kit That Cleans Itself While You Use It", cat:"Product",     url:"https://www.dhgate.com/product/8pcs-set-dog-grooming-kit-self-cleaning-pet/1087614127.html",    imgPrompt:"dog grooming session with electric brush, fluffy dog looking happy, bright studio",                               aff:true},
-  {id:8,  title:"Clean Paws in 10 Seconds – No Water Needed",               cat:"Product",     url:"https://www.dhgate.com/product/pet-foot-paw-cleaner-100ml-foam-waterless/1010228089.html",      imgPrompt:"dog paw being cleaned with foam spray, cute dog looking up, white background",                                   aff:true},
-  {id:9,  title:"The Easiest Way to Keep Your Dog's Teeth Sparkling",       cat:"Product",     url:"https://www.dhgate.com/product/100-pieces-batch-of-pet-finger-toothbrushes/1010228766.html",    imgPrompt:"dog teeth cleaning with finger toothbrush, happy dog, close-up, bright and clean",                               aff:true},
-  {id:10, title:"Why Vets Recommend This Shampoo for Sensitive Skin",       cat:"Product",     url:"https://www.dhgate.com/product/pet-shampoo-for-cats-and-dogs-cleansing-bathing/1089431467.html",imgPrompt:"dog bath time with gentle shampoo, fluffy clean dog, warm bathroom, cozy",                                     aff:true},
-  {id:11, title:"Why Beagles Make the Most Loyal Family Dogs",              cat:"Breed Guide", url:`${BASE_URL}/beagle-temperament/`,                                                                imgPrompt:"adorable beagle dog with family in park, warm golden hour light, photorealistic",                                aff:false},
-  {id:12, title:"The Boxer: A Gentle Giant Your Kids Will Love",            cat:"Breed Guide", url:`${BASE_URL}/boxer-breed-temperament/`,                                                           imgPrompt:"boxer dog playing gently with children in backyard, sunny day, warm colors",                                     aff:false},
-  {id:13, title:"Why the Bulldog Is Actually Perfect for Apartment Life",   cat:"Breed Guide", url:`${BASE_URL}/english-bulldog-temperament/`,                                                       imgPrompt:"cute english bulldog relaxing on couch in apartment, cozy home setting",                                         aff:false},
-  {id:14, title:"German Shepherd: The Dog That Would Do Anything for You",  cat:"Breed Guide", url:`${BASE_URL}/german-shepherd-temperament/`,                                                       imgPrompt:"majestic german shepherd dog looking loyal and alert, golden field, photorealistic",                              aff:false},
-  {id:15, title:"Rottweilers Are Misunderstood – Here's the Real Truth",    cat:"Breed Guide", url:`${BASE_URL}/rottweiler-temperament/`,                                                            imgPrompt:"friendly rottweiler dog with owner in park, gentle expression, warm lighting",                                   aff:false},
-  {id:16, title:"The Pomeranian: Big Personality in a Tiny Body",           cat:"Breed Guide", url:`${BASE_URL}/pomeranian-dog-breed-temperament-care-guide/`,                                       imgPrompt:"fluffy pomeranian dog posing playfully, bright background, adorable expression",                                 aff:false},
-  {id:17, title:"Why Everyone Falls in Love with Persian Cats",             cat:"Cat Guide",   url:`${BASE_URL}/persian-cat-temperament/`,                                                           imgPrompt:"beautiful persian cat with long fur, sitting elegantly, soft pastel background",                                 aff:false},
-  {id:18, title:"The Ragdoll Cat: Floppy, Fluffy and Totally Irresistible", cat:"Cat Guide",   url:`${BASE_URL}/ragdoll-temperament/`,                                                               imgPrompt:"ragdoll cat being held, blue eyes, fluffy and relaxed, warm cozy home",                                         aff:false},
-  {id:19, title:"5 Dog Diseases Most Owners Don't Catch in Time",           cat:"Health",      url:`${BASE_URL}/top-5-deadly-common-dog-diseases-symptoms-prevention-treatment-pictures/`,          imgPrompt:"veterinarian examining dog with care and concern, clinic setting, professional",                                  aff:false},
-  {id:20, title:"What's Actually in a Pet First Aid Kit?",                  cat:"Health",      url:`${BASE_URL}/pet-first-aid-kit-checklist/`,                                                       imgPrompt:"pet first aid kit open with supplies, red cross symbol, clean white background",                                 aff:false},
-  {id:21, title:"Never Miss a Pet Vaccine Again With This Simple System",   cat:"Health",      url:`${BASE_URL}/pet-vaccine-tracker/`,                                                               imgPrompt:"vet giving dog a vaccine, caring hands, clinical setting, warm and professional",                                aff:false},
-  {id:22, title:"These Common Plants Are Secretly Poisoning Your Pet",      cat:"Health",      url:`${BASE_URL}/common-plants-that-may-be-toxic-to-pets/`,                                           imgPrompt:"cat near houseplants, cautionary mood, green plants with warning feel, bright home",                             aff:false},
-  {id:23, title:"Your Complete Month-by-Month Kitten Growth Guide",         cat:"Cat Guide",   url:`${BASE_URL}/new-kitten-planner/`,                                                                imgPrompt:"tiny kitten growing up, multiple stages, warm and playful, pastel colors",                                      aff:false},
-  {id:24, title:"Answers to Pet Food Questions You Were Afraid to Ask",     cat:"Nutrition",   url:`${BASE_URL}/pet-food-queries/`,                                                                  imgPrompt:"dog and cat eating from bowls together, healthy food, bright clean kitchen",                                     aff:false},
-  {id:25, title:"Groom Your Cat at Home Like a Pro – No Scratches",         cat:"Cat Guide",   url:`${BASE_URL}/cat-grooming-guide-2/`,                                                              imgPrompt:"cat being gently groomed at home, calm cat, owner brushing fur, cozy setting",                                   aff:false},
-  {id:26, title:"Score Your Pet's Hygiene in Under 5 Minutes",              cat:"Health",      url:`${BASE_URL}/pet-hygiene-score-card/`,                                                            imgPrompt:"clean and groomed dog and cat side by side, healthy shiny fur, bright background",                               aff:false},
-  {id:27, title:"Is Your Cat Moving Less Lately? Read This Now",            cat:"Cat Health",  url:`${BASE_URL}/simple-tips-to-know-signs-of-osteoarthritis-in-cats/`,                              imgPrompt:"senior cat resting comfortably, caring owner nearby, soft warm light, empathetic mood",                          aff:false},
-  {id:28, title:"How to Stop Cat Scratches Before They Happen",             cat:"Cat Health",  url:`${BASE_URL}/how-to-prevent-cat-paw-scratches-at-home/`,                                         imgPrompt:"cat paw with scratching post, prevention theme, playful and safe home environment",                              aff:false},
-  {id:29, title:"Yes, You Can Walk Your Cat – Here's Exactly How",          cat:"Cat Guide",   url:`${BASE_URL}/how-to-walk-your-cat-safely-harness-training-for-beginners/`,                       imgPrompt:"cat wearing harness on a leash outside, curious cat exploring, sunny day",                                       aff:false},
-  {id:30, title:"Simple Daily Habits That Protect Your Family from Pet Diseases", cat:"Health",url:`${BASE_URL}/digital-awareness-to-minimize-zoonosis-spread/`,                                   imgPrompt:"happy family with clean healthy pets at home, hygiene theme, warm and safe feeling",                             aff:false},
-  {id:31, title:"The Water Bottle That Keeps You Hydrated All Day",         cat:"General",     url:"https://echowater.com/products/echo-flask",                                                     imgPrompt:"sleek modern water flask on a clean desk, lifestyle product photo, minimal design",                              aff:true},
+  // ── DOG HEALTH & DISEASES ──
+  {id:1,  title:"5 Silent Dog Diseases That Kill Before Owners Realize",
+          cat:"Dog Health",
+          url:`${BASE_URL}/top-5-deadly-common-dog-diseases-symptoms-prevention-treatment-pictures/`,
+          imgPrompt:"close-up of a concerned veterinarian in white coat gently examining a golden retriever on a stainless steel exam table, soft clinic lighting, shallow depth of field, National Geographic style, photorealistic 4K",
+          aff:false},
+  {id:2,  title:"Why Dog Vaccines Are the Most Important Thing You Do This Year",
+          cat:"Dog Health",
+          url:`${BASE_URL}/dog-vaccines-matter-why-staying-current-protects-health-one-health-globe/`,
+          imgPrompt:"professional vet carefully administering vaccine to a calm labrador puppy, warm golden clinic light, compassionate expression, clean medical setting, sharp focus on hands and dog, magazine-quality photograph",
+          aff:false},
+  {id:3,  title:"Is Your Dog's Paw Trying to Tell You Something?",
+          cat:"Dog Care",
+          url:`${BASE_URL}/dog-paw-scanner/`,
+          imgPrompt:"extreme close-up of a healthy golden retriever paw held gently in human hands on green grass, warm sunlight, soft bokeh background, premium pet lifestyle photography, crystal clear detail",
+          aff:false},
+  {id:4,  title:"Ticks on Your Cat? Here's What You Must Do Right Now",
+          cat:"Cat Health",
+          url:`${BASE_URL}/protecting-cats-from-ticks-indoor-and-outdoor-risks-explained/`,
+          imgPrompt:"focused lifestyle photo of a worried pet owner carefully checking a tabby cat's fur in a bright living room, natural window light, warm tones, sharp detail, cinematic composition",
+          aff:false},
+  {id:5,  title:"Your Cat Is Slowing Down — This Could Be Why",
+          cat:"Cat Health",
+          url:`${BASE_URL}/simple-tips-to-know-signs-of-osteoarthritis-in-cats/`,
+          imgPrompt:"elegant senior cat lying peacefully on a cream-colored sofa, soft morning light from window, slight sad but serene expression, premium lifestyle photography, shallow depth of field, warm muted tones",
+          aff:false},
+  {id:6,  title:"The Zoonosis Risk In Your Home You Don't Know About",
+          cat:"Pet Health",
+          url:`${BASE_URL}/digital-awareness-to-minimize-zoonosis-spread/`,
+          imgPrompt:"loving family — father, mother, child — sitting safely with a healthy clean dog on a bright living room floor, warm afternoon light, clean home, joyful yet educational mood, premium lifestyle photo",
+          aff:false},
+  {id:7,  title:"Animal Safety Is Human Safety — The One Health Connection",
+          cat:"One Health",
+          url:`${BASE_URL}/animal-safety-protects-human-safety-one-health-guide/`,
+          imgPrompt:"aerial-style lifestyle photo of vet, family and healthy dog in green park, golden hour light, hopeful and educational mood, professional magazine composition, photorealistic",
+          aff:false},
+
+  // ── PET SAFETY & HOME ──
+  {id:8,  title:"Room-by-Room Pet Safety Guide Every Owner Needs",
+          cat:"Pet Safety",
+          url:`${BASE_URL}/room-by-room-pet-safety-guide-for-families/`,
+          imgPrompt:"bright modern home interior with a curious golden puppy exploring a spotless kitchen, safety-aware composition, warm natural light, premium real estate + pet lifestyle photography fusion",
+          aff:false},
+  {id:9,  title:"Indoor Cat Safety Mistakes That Put Your Pet at Risk",
+          cat:"Cat Safety",
+          url:`${BASE_URL}/indoor-cat-safety-checklist-for-everyday-home-risks/`,
+          imgPrompt:"sleek tabby cat sitting on a modern minimalist kitchen counter, dramatic side window light, luxury home interior, fine art pet photography style, tack-sharp focus",
+          aff:false},
+  {id:10, title:"Family Pet Emergency Plan — Are You Prepared?",
+          cat:"Pet Safety",
+          url:`${BASE_URL}/family-pet-emergency-plan-template/`,
+          imgPrompt:"responsible father holding a first aid kit with a golden retriever beside him, family in background, strong and calm emergency-preparedness mood, cinematic warm light, photorealistic",
+          aff:false},
+  {id:11, title:"New Dog Owner? This Safety Checklist Could Save Your Pet",
+          cat:"Dog Safety",
+          url:`${BASE_URL}/pet-safety-checklist-for-new-dog-owners/`,
+          imgPrompt:"young excited couple holding a small puppy in a bright clean apartment, checklist visible on tablet, warm lifestyle photography, genuine emotion, bokeh background, premium quality",
+          aff:false},
+  {id:12, title:"Spring Pet Safety Checklist for Dogs and Cats",
+          cat:"Pet Safety",
+          url:`${BASE_URL}/spring-pet-safety-checklist-for-dogs-and-cats-easy-home-and-garden-tips/`,
+          imgPrompt:"happy labrador running through a lush spring garden, golden sunlight, vibrant green grass, flowers in background, action photography freeze frame, premium lifestyle quality",
+          aff:false},
+  {id:13, title:"Pet-Friendly Garden Ideas That Keep Your Pet Safe",
+          cat:"Pet Safety",
+          url:`${BASE_URL}/pet-friendly-garden-ideas-for-safer-outdoor-play/`,
+          imgPrompt:"beautiful well-designed garden with a beagle playing safely among pet-friendly plants, warm golden hour, professional garden lifestyle photography, lush and inviting composition",
+          aff:false},
+  {id:14, title:"Spring Break Pet Travel — The Complete Family Checklist",
+          cat:"Pet Travel",
+          url:`${BASE_URL}/spring-break-pet-travel-checklist-for-families/`,
+          imgPrompt:"happy family loading car for road trip with golden retriever looking excited out the window, bright sunny day, lifestyle adventure photography, warm authentic emotion",
+          aff:false},
+  {id:15, title:"The Complete Pet Safety Hub for Responsible Owners",
+          cat:"Pet Safety",
+          url:`${BASE_URL}/pet-safety-hub/`,
+          imgPrompt:"confident smiling pet owner sitting with a healthy well-groomed dog and cat together on a clean modern sofa, professional lifestyle photography, warm tones, premium composition",
+          aff:false},
+
+  // ── BREED GUIDES ──
+  {id:16, title:"Why Beagles Make the Most Loyal Family Dogs",
+          cat:"Breed Guide",
+          url:`${BASE_URL}/beagle-temperament/`,
+          imgPrompt:"adorable beagle with soulful brown eyes sitting in a sun-drenched park, family blurred in background, golden hour bokeh, premium pet portrait photography, sharp eyes in focus",
+          aff:false},
+  {id:17, title:"The Boxer Dog — Gentle Giant Your Whole Family Will Love",
+          cat:"Breed Guide",
+          url:`${BASE_URL}/boxer-breed-temperament/`,
+          imgPrompt:"powerful yet gentle boxer dog sitting proudly in a lush backyard, child laughing beside it, warm afternoon light, full-frame professional pet photography, beautiful coat detail",
+          aff:false},
+  {id:18, title:"Why the Bulldog Is Actually Perfect for Apartment Life",
+          cat:"Breed Guide",
+          url:`${BASE_URL}/english-bulldog-temperament/`,
+          imgPrompt:"wrinkly English bulldog relaxing on a luxury velvet sofa in a stylish apartment, moody warm light, editorial pet photography, perfect wrinkle texture detail, premium composition",
+          aff:false},
+  {id:19, title:"German Shepherd — The Dog That Would Do Anything for You",
+          cat:"Breed Guide",
+          url:`${BASE_URL}/german-shepherd-temperament/`,
+          imgPrompt:"majestic German shepherd standing alert in a golden wheat field at sunset, dramatic backlight, hero dog portrait, National Geographic style, photorealistic 4K quality",
+          aff:false},
+  {id:20, title:"Rottweilers Are Deeply Misunderstood — Here's the Truth",
+          cat:"Breed Guide",
+          url:`${BASE_URL}/rottweiler-temperament/`,
+          imgPrompt:"gentle rottweiler resting its head on owner's lap in a cozy living room, soft candlelight warmth, intimate bond captured beautifully, premium lifestyle pet photography",
+          aff:false},
+  {id:21, title:"The Pomeranian — Big Personality in an Irresistible Body",
+          cat:"Breed Guide",
+          url:`${BASE_URL}/pomeranian-dog-breed-temperament-care-guide/`,
+          imgPrompt:"perfectly groomed fluffy pomeranian with fox-like face sitting on a white marble surface, studio-quality lighting, luxury pet photography, cloud-like fur detail, sharp eyes",
+          aff:false},
+  {id:22, title:"Labrador Retriever — The World's Most Beloved Family Dog",
+          cat:"Breed Guide",
+          url:`${BASE_URL}/`,
+          imgPrompt:"golden labrador retriever catching a ball mid-air at sunset beach, action freeze photography, golden light, spray of water, powerful and joyful, premium sports pet photography",
+          aff:false},
+  {id:23, title:"French Bulldog — Small Dog With the Biggest Heart",
+          cat:"Breed Guide",
+          url:`${BASE_URL}/`,
+          imgPrompt:"bat-eared French bulldog with striking blue eyes sitting on a cobblestone city street, editorial fashion-meets-pet photography, moody urban light, magazine cover quality",
+          aff:false},
+  {id:24, title:"Border Collie — The Smartest Dog Breed on Earth",
+          cat:"Breed Guide",
+          url:`${BASE_URL}/`,
+          imgPrompt:"black and white border collie mid-herd in misty green Scottish highlands, professional wildlife-style photography, dramatic cloudy sky, intense focused eyes, photorealistic",
+          aff:false},
+  {id:25, title:"Cat Breeds Compared — Which One Is Right for Your Home?",
+          cat:"Cat Guide",
+          url:`${BASE_URL}/cat-breeds-comparison/`,
+          imgPrompt:"four elegant cat breeds sitting together on a clean white studio backdrop — Persian, Siamese, Maine Coon, Ragdoll — professional studio lighting, luxury catalog photography",
+          aff:false},
+
+  // ── CAT GUIDES ──
+  {id:26, title:"Why Everyone Falls in Love with Persian Cats",
+          cat:"Cat Guide",
+          url:`${BASE_URL}/persian-cat-temperament/`,
+          imgPrompt:"stunning white Persian cat with amber eyes sitting on a velvet royal blue cushion, dramatic soft studio lighting, silk-like fur detail, luxury pet portrait photography, magazine quality",
+          aff:false},
+  {id:27, title:"The Ragdoll Cat — Floppy, Fluffy and Totally Irresistible",
+          cat:"Cat Guide",
+          url:`${BASE_URL}/ragdoll-temperament/`,
+          imgPrompt:"beautiful blue-eyed ragdoll cat being cradled like a baby by a smiling woman in a sunlit room, ultra-soft fur visible, warm lifestyle photography, genuine bonding moment captured",
+          aff:false},
+  {id:28, title:"Your Complete Month-by-Month Kitten Growth Guide",
+          cat:"Cat Guide",
+          url:`${BASE_URL}/new-kitten-planner/`,
+          imgPrompt:"tiny orange tabby kitten at exactly 8 weeks old sitting in a wicker basket surrounded by soft white blankets, natural window light, fine art pet photography, irresistible cuteness",
+          aff:false},
+  {id:29, title:"Groom Your Cat at Home Like a Pro — Zero Scratches",
+          cat:"Cat Care",
+          url:`${BASE_URL}/cat-grooming-guide-2/`,
+          imgPrompt:"woman calmly grooming a fluffy Maine Coon cat with professional brush on a clean bathroom counter, soft warm lighting, focused and relaxed cat, premium lifestyle photography",
+          aff:false},
+  {id:30, title:"Yes, You Can Walk Your Cat — Here's the Complete Guide",
+          cat:"Cat Guide",
+          url:`${BASE_URL}/how-to-walk-your-cat-safely-harness-training-for-beginners/`,
+          imgPrompt:"adventurous tabby cat confidently walking on a leash in a lush green park, owner's hand holding the leash visible, golden afternoon light, lifestyle adventure pet photography",
+          aff:false},
+  {id:31, title:"How to Stop Cat Scratches Before They Draw Blood",
+          cat:"Cat Care",
+          url:`${BASE_URL}/how-to-prevent-cat-paw-scratches-at-home/`,
+          imgPrompt:"playful kitten batting at a premium cat scratching post with extended claws, freeze-frame action shot, warm home interior, sharp claw detail, professional pet photography",
+          aff:false},
+  {id:32, title:"The Healthy Cat-Human Bond That Changes Everything",
+          cat:"Cat Guide",
+          url:`${BASE_URL}/healthy-cat-bond-for-young-ladies-at-home/`,
+          imgPrompt:"young woman lying on a cozy bedroom floor reading with a purring cat on her chest, afternoon golden light through curtains, intimate lifestyle photography, warm and peaceful mood",
+          aff:false},
+
+  // ── HEALTH & WELLNESS ──
+  {id:33, title:"What's Actually Inside a Pet First Aid Kit?",
+          cat:"Pet Health",
+          url:`${BASE_URL}/pet-first-aid-kit-checklist/`,
+          imgPrompt:"flat-lay top-down shot of an organized pet first aid kit contents on white marble — bandages, gloves, antiseptic, thermometer — perfect product styling photography, clinical and clean",
+          aff:false},
+  {id:34, title:"Never Miss a Pet Vaccine Again With This Tracker",
+          cat:"Pet Health",
+          url:`${BASE_URL}/pet-vaccine-tracker/`,
+          imgPrompt:"organized vaccine record booklet beside a healthy beagle puppy on a clean vet desk, stethoscope visible, warm clinical light, premium healthcare lifestyle photography",
+          aff:false},
+  {id:35, title:"These Common House Plants Are Silently Poisoning Your Pet",
+          cat:"Pet Safety",
+          url:`${BASE_URL}/common-plants-that-may-be-toxic-to-pets/`,
+          imgPrompt:"curious golden kitten sniffing a beautiful potted lily plant indoors, warning-awareness mood, dramatic side light, sharp focus on dangerous plant and cat face, editorial quality",
+          aff:false},
+  {id:36, title:"Score Your Pet's Hygiene — Take the 5-Minute Test",
+          cat:"Pet Hygiene",
+          url:`${BASE_URL}/pet-hygiene-score-card/`,
+          imgPrompt:"freshly groomed happy golden retriever and Persian cat sitting side-by-side on a white studio backdrop, gleaming clean fur, bright professional studio lighting, luxury pet photography",
+          aff:false},
+  {id:37, title:"Answers to Pet Food Questions You Were Afraid to Ask",
+          cat:"Pet Nutrition",
+          url:`${BASE_URL}/pet-food-queries/`,
+          imgPrompt:"premium dog food ingredients artfully arranged — fresh meat, vegetables, grains — alongside a healthy labrador looking up eagerly, styled food photography meets pet lifestyle",
+          aff:false},
+  {id:38, title:"Healthy Pets + Happy Humans — The Bond Science Proves",
+          cat:"Pet Wellness",
+          url:`${BASE_URL}/healthy-pets-and-human-bond-for-family-life/`,
+          imgPrompt:"joyful family of four running in a park with their golden retriever, sunset light, motion blur on grass, candid lifestyle photography, genuine happiness, cinematic composition",
+          aff:false},
+  {id:39, title:"Brain Games for Dogs and Cats That Prevent Boredom",
+          cat:"Pet Training",
+          url:`${BASE_URL}/best-cognitive-exercises-that-can-change-your-brain/`,
+          imgPrompt:"smart border collie solving a wooden puzzle toy with intense focus, premium lifestyle photography, sharp eye detail, warm indoor light, intellectual and engaging composition",
+          aff:false},
+  {id:40, title:"Basic Pet Training Tools That Actually Work at Home",
+          cat:"Pet Training",
+          url:`${BASE_URL}/basic-pet-training-tools-for-better-command-prompting-and-home-behavior/`,
+          imgPrompt:"dog trainer in modern home holding clicker while labrador sits perfectly on command, clean composition, warm natural light, professional training lifestyle photography",
+          aff:false},
+  {id:41, title:"Your Dog and Cat Vaccine Record — Keep It Updated",
+          cat:"Pet Health",
+          url:`${BASE_URL}/dog-and-cat-vaccine-tracker-for-pet-owners/`,
+          imgPrompt:"close-up of organized colorful pet health records on a desk with a pen and a happy puppy in the background, premium lifestyle and healthcare photography blend",
+          aff:false},
+
+  // ── PET CARE RESOURCES ──
+  {id:42, title:"The Ultimate Pet Safety Hub — Everything in One Place",
+          cat:"Resources",
+          url:`${BASE_URL}/useful-checklists-and-care-resources-to-support-everyday-pet-life/`,
+          imgPrompt:"neat flat-lay of pet care essentials — leash, brush, bowl, treats, toy, first aid — on a clean wooden surface, professional product styling, warm natural light, magazine quality",
+          aff:false},
+  {id:43, title:"Free Pet Care Booklet — Download and Save It Today",
+          cat:"Resources",
+          url:`${BASE_URL}/free-pet-care-faq-booklet/`,
+          imgPrompt:"attractive pet care guide booklet on a clean wooden desk with a happy dog beside it, warm home office light, editorial lifestyle photography, premium and trustworthy",
+          aff:false},
+  {id:44, title:"Helpful Everyday Wellness Ideas for Safer, Smarter Pets",
+          cat:"Pet Wellness",
+          url:`${BASE_URL}/helpful-everyday-wellness-ideas-for-safer-pets-and-smarter-homes/`,
+          imgPrompt:"woman doing morning yoga while her calm cat sits on a mat beside her, soft sunrise light, holistic wellness lifestyle photography, serene and aspirational mood",
+          aff:false},
+  {id:45, title:"Pet Home Safety — The Room-by-Room Guide for Families",
+          cat:"Pet Safety",
+          url:`${BASE_URL}/pet-home-safety-guide-for-families-2/`,
+          imgPrompt:"architect-style overhead view of a beautiful modern home floor plan with a golden retriever visible in kitchen, premium interior lifestyle photography, editorial quality",
+          aff:false},
+
+  // ── AFFILIATE PRODUCTS ──
+  {id:46, title:"The LED Nail Clipper That Makes Grooming Stress-Free",
+          cat:"Product",
+          url:"https://www.dhgate.com/product/led-light-pet-nail-clipper-with-amplification/1010092124.html",
+          imgPrompt:"premium LED pet nail clipper displayed on a clean marble surface with soft diffused studio light, luxury product photography, sharp detail on the clipper head, white background",
+          aff:true},
+  {id:47, title:"This Grooming Kit Handles Everything Your Pet Needs",
+          cat:"Product",
+          url:"https://www.dhgate.com/product/combs-dog-hair-remover-cat-brush-grooming/1028087374.html",
+          imgPrompt:"elegant flat-lay of a complete pet grooming kit — combs, brushes, scissors — arranged perfectly on a dark wood surface, luxury product styling, dramatic moody lighting",
+          aff:true},
+  {id:48, title:"See Exactly What Your Dog Does When You're Not Home",
+          cat:"Product",
+          url:"https://www.dhgate.com/product/dog-collars-hd-1080p-wireless-collar-camera/1032506070.html",
+          imgPrompt:"sleek smart dog collar with embedded camera on a golden retriever's neck outdoors, tech product meets lifestyle photography, shallow depth of field, premium gadget feel",
+          aff:true},
+  {id:49, title:"The 2-in-1 Pet Stroller That Changes Every Walk",
+          cat:"Product",
+          url:"https://bestchoiceproducts.com/products/2-in-1-pet-dog-bike-trailer",
+          imgPrompt:"happy small white dog sitting regally in a premium navy blue pet stroller in a sunny park, lifestyle product photography, lush green background, luxury pet brand feel",
+          aff:true},
+  {id:50, title:"8-Piece Grooming Kit That Cleans Itself While You Use It",
+          cat:"Product",
+          url:"https://www.dhgate.com/product/8pcs-set-dog-grooming-kit-self-cleaning-pet/1087614127.html",
+          imgPrompt:"satisfied fluffy Samoyed dog mid-groom with electric self-cleaning brush, studio lighting, clean white background, professional pet product photography, sharp fur detail",
+          aff:true},
+  {id:51, title:"Clean Your Dog's Paws in 10 Seconds — No Water Needed",
+          cat:"Product",
+          url:"https://www.dhgate.com/product/pet-foot-paw-cleaner-100ml-foam-waterless/1010228089.html",
+          imgPrompt:"dog paw being sprayed with foam cleanser held by careful hands, clean white background, clinical product photography, sharp foam and paw detail, premium and trustworthy",
+          aff:true},
+  {id:52, title:"Keep Your Dog's Teeth Sparkling With This Simple Tool",
+          cat:"Product",
+          url:"https://www.dhgate.com/product/100-pieces-batch-of-pet-finger-toothbrushes/1010228766.html",
+          imgPrompt:"dog smiling with clean white teeth as owner uses finger toothbrush, close-up dental lifestyle photography, bright clean tones, premium pet health product visual",
+          aff:true},
+  {id:53, title:"Vet-Recommended Shampoo for Dogs With Sensitive Skin",
+          cat:"Product",
+          url:"https://www.dhgate.com/product/pet-shampoo-for-cats-and-dogs-cleansing-bathing/1089431467.html",
+          imgPrompt:"golden retriever in a luxury bath tub being washed with premium shampoo, spa-style pet photography, warm steamy bathroom light, fluffy suds, joyful dog expression",
+          aff:true},
+
+  // ── SPECIAL TOPICS ──
+  {id:54, title:"How a Healthy Bond With Your Cat Improves Your Life",
+          cat:"Cat Wellness",
+          url:`${BASE_URL}/healthy-cat-bond-for-young-ladies-at-home/`,
+          imgPrompt:"peaceful young woman meditating on a white bed while an elegant cat sits beside her, soft morning light, fine art lifestyle photography, calm and aspirational mood",
+          aff:false},
+  {id:55, title:"Safe Drinking Water for Pets — 7 Rules You Must Follow",
+          cat:"Pet Health",
+          url:`${BASE_URL}/safe-drinking-water-at-home-7-hygiene-rules-2/`,
+          imgPrompt:"happy golden retriever drinking from a sparkling clean modern pet water fountain, premium lifestyle photography, clean kitchen backdrop, crystal clear water detail",
+          aff:false},
+  {id:56, title:"How Pets Protect Children's Mental Health at Home",
+          cat:"Pet Wellness",
+          url:`${BASE_URL}/kids-off-screens-best-alternatives-for-eye-health/`,
+          imgPrompt:"young child laughing and playing with a fluffy puppy on a bright living room rug, genuine joy captured, warm natural light, premium lifestyle family photography",
+          aff:false},
+  {id:57, title:"One Health — Why Protecting Animals Protects All of Us",
+          cat:"One Health",
+          url:`${BASE_URL}/one-health-a-pillar-for-climate-sustainability/`,
+          imgPrompt:"wildlife veterinarian examining a bird in lush green forest, golden light rays through trees, documentary-style photography, powerful One Health message, National Geographic quality",
+          aff:false},
+  {id:58, title:"Your Pet Is Your Family — Here's How to Treat Them Like It",
+          cat:"Pet Wellness",
+          url:`${BASE_URL}/pet-safety-hub/`,
+          imgPrompt:"multi-generational family — grandparents, parents, children — all sitting together with a golden retriever in a sunlit living room, authentic joy, premium lifestyle photography",
+          aff:false},
+  {id:59, title:"The Complete Dog Vaccine Guide — What Every Owner Must Know",
+          cat:"Dog Health",
+          url:`${BASE_URL}/pet-vaccine-tracker/`,
+          imgPrompt:"vet in a modern clinic showing vaccine schedule on tablet to attentive dog owner with golden puppy on the table, trust and professionalism, warm clinical lifestyle photography",
+          aff:false},
+  {id:60, title:"Pet Food FAQ — Every Question Answered By Experts",
+          cat:"Pet Nutrition",
+          url:`${BASE_URL}/pet-food-queries/`,
+          imgPrompt:"premium dry and wet pet food perfectly plated in ceramic bowls beside healthy dog and cat, styled food + lifestyle photography, warm kitchen backdrop, magazine quality",
+          aff:false},
+  {id:61, title:"How to Keep Your Pet Safe This Season — Full Guide",
+          cat:"Pet Safety",
+          url:`${BASE_URL}/pet-safety-hub/`,
+          imgPrompt:"responsible pet owner reading a safety guide with a healthy husky beside them in a cozy autumn home, warm amber light, lifestyle editorial photography, premium composition",
+          aff:false},
+  {id:62, title:"Train Your Pet Better With These 5 Proven Tools",
+          cat:"Pet Training",
+          url:`${BASE_URL}/basic-pet-training-tools-for-better-command-prompting-and-home-behavior/`,
+          imgPrompt:"confident dog trainer working with an attentive German shepherd using hand signals in a bright outdoor setting, professional training lifestyle photography, warm light, sharp focus",
+          aff:false},
 ];
 
 const STYLES = ["Educational","Storytelling","How-To","Hook/Viral","FAQ/List"];
@@ -353,8 +649,8 @@ async function runPost() {
   await retryPendingGroupPosts();
   await checkAndCommentFallback();
 
-  const idx = postIndex % 31;
-  const round = Math.floor(postIndex / 31) + 1;
+  const idx = postIndex % 62;
+  const round = Math.floor(postIndex / 62) + 1;
   const post = POSTS[idx];
   const style = STYLES[styleIndex % 5];
   const utm = buildUTM(post);
@@ -388,7 +684,7 @@ async function runPost() {
 
     postIndex++;
     styleIndex++;
-    const nextPost = POSTS[postIndex % 31];
+    const nextPost = POSTS[postIndex % 62];
     log(`Done. Total: ${totalPosted} page | ${totalGroupPosted} group | Pending: ${pendingGroupPosts.length}`);
     log(`Next: P${String(nextPost.id).padStart(2,'0')} — ${nextPost.title}`);
 
@@ -515,7 +811,7 @@ async function sendHourlyGroupEmail(postUrl, postTitle) {
 
 // STARTUP
 log('OHG Pet Autopilot Server v5 starting...');
-log(`Posts: 31 | Groups: ${PET_GROUPS.length} | Interval: ${INTERVAL_MS/60000}min | Hours: ${ACTIVE_FROM}-${ACTIVE_TO} EST`);
+log(`Posts: 62 | Groups: ${PET_GROUPS.length} | Interval: ${INTERVAL_MS/60000}min | Hours: ${ACTIVE_FROM}-${ACTIVE_TO} EST`);
 log(`Token: ${FB_SYS_TOKEN?'SET len='+FB_SYS_TOKEN.length:'MISSING'} | Claude: ${CLAUDE_KEY?'SET':'MISSING'}`);
 log(`Group token: ${GROUP_TOKEN && GROUP_TOKEN!==FB_SYS_TOKEN?'SEPARATE (len='+GROUP_TOKEN.length+')':'using FB_TOKEN (no publish_to_groups yet)'}`);
 log(`Email: ${GMAIL_PASS?'✅ configured → '+NOTIFY_EMAIL:'⚠️ GMAIL_PASS not set'}`);
@@ -538,14 +834,14 @@ http.createServer((req, res) => {
   }
   if(req.url === '/api/stats') {
     const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
-    const nextPost = POSTS[postIndex % 31];
+    const nextPost = POSTS[postIndex % 62];
     const activeG  = PET_GROUPS.filter(g => !groupStats[g.id].permanent).length;
     const bannedG  = PET_GROUPS.filter(g => groupStats[g.id].permanent).length;
     const coolG    = PET_GROUPS.filter(g => groupStats[g.id].cooldown && !groupStats[g.id].permanent).length;
     const nextGroup = pickNextGroup() || PET_GROUPS[0];
     const payload = {
       server:'OHG Pet Autopilot v5', time_est:est.toISOString(), is_active:isActiveHour(),
-      post_index:postIndex%31+1, round:Math.floor(postIndex/31)+1,
+      post_index:postIndex%62+1, round:Math.floor(postIndex/62)+1,
       total_page:totalPosted, total_group:totalGroupPosted, total_comments:totalComments,
       pending_count:pendingGroupPosts.length, groups_total:PET_GROUPS.length,
       groups_active:activeG, groups_banned:bannedG, groups_cooldown:coolG,
@@ -563,22 +859,22 @@ http.createServer((req, res) => {
     return;
   }
   const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
-  const nextPost = POSTS[postIndex % 31];
+  const nextPost = POSTS[postIndex % 62];
   const nextGroup = pickNextGroup() || PET_GROUPS[0];
-  const round = Math.floor(postIndex / 31) + 1;
+  const round = Math.floor(postIndex / 62) + 1;
   const permanentGroups = PET_GROUPS.filter(g => groupStats[g.id].permanent);
   const activeGroups = PET_GROUPS.filter(g => !groupStats[g.id].permanent);
   const html = `<!DOCTYPE html>
 <html><head><title>OHG Pet Autopilot v5</title><meta http-equiv="refresh" content="30">
 <style>*{box-sizing:border-box;}body{font-family:Arial;background:#0a0f0d;color:#e8f5ec;padding:16px;max-width:1100px;margin:0 auto;font-size:13px;}h1{color:#2dff8e;margin:0 0 4px;}h3{color:#7a9e85;margin:12px 0 6px;}.stat{display:inline-block;background:#111a15;border:1px solid #1e2e23;border-radius:8px;padding:10px 16px;margin:4px;text-align:center;min-width:90px;}.sv{font-size:22px;font-weight:bold;color:#2dff8e;}.sl{font-size:10px;color:#4a6652;margin-top:3px;}.badge{background:#1a2e20;border:1px solid #2dff8e;border-radius:4px;padding:1px 7px;font-size:10px;color:#2dff8e;margin-left:6px;}table{width:100%;border-collapse:collapse;font-size:11px;}td,th{padding:4px 8px;text-align:left;border-bottom:1px solid #1a2e1a;}th{color:#2dff8e;background:#0d1a10;}.log{background:#000;border-radius:8px;padding:12px;font-family:monospace;font-size:10px;max-height:400px;overflow-y:auto;}.log div{padding:1px 0;border-bottom:1px solid #080808;}.box{background:#0d1a10;border:1px solid #1e2e23;border-radius:8px;padding:12px;margin:10px 0;}.warn{border-color:#ff8c00;background:#120d00;}.ok{color:#2dff8e;}.err{color:#ff5252;}.info{color:#64b5f6;}.warn-t{color:#ffb830;}</style></head>
 <body>
-<h1>🐾 OHG Pet Autopilot v5 <span class="badge">51 Groups · 24/7 · Smart Retry · AI Images</span></h1>
+<h1>🐾 OHG Pet Autopilot v5 <span class="badge">62 Posts · 51 Groups · 24/7 · AI Images</span></h1>
 <p style="color:#4a6652">${est.toLocaleString('en-US',{timeZone:'America/New_York'})} EST &nbsp;|&nbsp; Auto-refresh 30s &nbsp;|&nbsp; Round ${round} of ∞</p>
 <div>
   <div class="stat"><div class="sv">${totalPosted}</div><div class="sl">Page Posts</div></div>
   <div class="stat"><div class="sv">${totalGroupPosted}</div><div class="sl">Group Posts</div></div>
   <div class="stat"><div class="sv">${totalComments}</div><div class="sl">💬 Comments</div></div>
-  <div class="stat"><div class="sv">${postIndex%31+1}/31</div><div class="sl">Post Index</div></div>
+  <div class="stat"><div class="sv">${postIndex%62+1}/62</div><div class="sl">Post Index</div></div>
   <div class="stat"><div class="sv">R${round}</div><div class="sl">Round</div></div>
   <div class="stat"><div class="sv">${pendingGroupPosts.length}</div><div class="sl">Pending Review</div></div>
   <div class="stat"><div class="sv">${activeGroups.length}</div><div class="sl">Active Groups</div></div>
