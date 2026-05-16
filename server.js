@@ -12,11 +12,8 @@ const ACTIVE_FROM  = parseInt((process.env.ACTIVE_FROM || '0').replace(/['"]/g,'
 const ACTIVE_TO    = parseInt((process.env.ACTIVE_TO || '23').replace(/['"]/g,''));
 const NOTIFY_EMAIL = (process.env.NOTIFY_EMAIL || 'usamanazeerrp1@gmail.com').trim();
 
-// ── STRICT IMAGE QUALITY SUFFIX — appended to every prompt ───────────────────
-// Prevents: distorted faces, damaged hands, text overlays, collages, split panels
 const IMG_SUFFIX = ', single scene only, photorealistic, National Geographic quality, natural lighting, NO text overlay, NO collage, NO split panels, NO distorted anatomy, NO multiple images, ultra sharp focus, 4K professional photography, genuine authentic look';
 
-// ── 51 REAL PET GROUPS ───────────────────────────────────────────────────────
 const PET_GROUPS = [
   { id:'500368749468100',   name:'Pet Group 1'  },
   { id:'3600051136946931',  name:'Pet Group 2'  },
@@ -76,322 +73,193 @@ PET_GROUPS.forEach(g => { groupStats[g.id] = { success:0, fail:0, lastFail:0, co
 let pendingGroupPosts = [];
 let postedGroupsThisCycle = new Set();
 
-// ── 62 POSTS — PREMIUM IMAGE PROMPTS ─────────────────────────────────────────
-// Rules applied per prompt:
-// - Single clear scene, no composites
-// - Humans: show face naturally OR body from distance — NEVER close-up hands
-// - Animals: full body or face portrait — no distorted limbs
-// - No text, no logos, no split frames
 const POSTS = [
   {id:1, title:"5 Silent Dog Diseases That Kill Before Owners Realize", cat:"Dog Health",
    url:`${BASE_URL}/top-5-deadly-common-dog-diseases-symptoms-prevention-treatment-pictures/`,
-   imgPrompt:"a caring male veterinarian in white coat examining a calm golden retriever on a clinic table, vet face fully visible and natural, dog lying still with gentle eyes, bright clinic window light, single clean professional scene",
-   aff:false},
-
+   imgPrompt:"a caring male veterinarian in white coat examining a calm golden retriever on a clinic table, vet face fully visible and natural, dog lying still with gentle eyes, bright clinic window light, single clean professional scene",aff:false},
   {id:2, title:"Why Dog Vaccines Are the Most Important Thing You Do This Year", cat:"Dog Health",
    url:`${BASE_URL}/dog-vaccines-matter-why-staying-current-protects-health-one-health-globe/`,
-   imgPrompt:"a smiling female veterinarian in scrubs standing beside a golden labrador puppy sitting on a clinic table, vet face naturally visible and warm, puppy alert and looking at camera, bright clean clinic, single professional lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a smiling female veterinarian in scrubs standing beside a golden labrador puppy sitting on a clinic table, vet face naturally visible and warm, puppy alert and looking at camera, bright clean clinic, single professional lifestyle scene",aff:false},
   {id:3, title:"Is Your Dog's Paw Trying to Tell You Something?", cat:"Dog Care",
    url:`${BASE_URL}/dog-paw-scanner/`,
-   imgPrompt:"extreme close-up of a single healthy golden retriever paw resting on fresh green grass, paw perfectly formed with natural fur between toes, warm sunlight, soft garden bokeh background, NO humans in frame whatsoever",
-   aff:false},
-
+   imgPrompt:"extreme close-up of a single healthy golden retriever paw resting on fresh green grass, paw perfectly formed with natural fur between toes, warm sunlight, soft garden bokeh background, NO humans in frame whatsoever",aff:false},
   {id:4, title:"Ticks on Your Cat? Here's What You Must Do Right Now", cat:"Cat Health",
    url:`${BASE_URL}/protecting-cats-from-ticks-indoor-and-outdoor-risks-explained/`,
-   imgPrompt:"a tabby cat sitting on a wooden floor being gently examined, woman shown from chest level wearing casual top, cat face sharp and calm looking at camera, warm living room window light, single clean indoor scene",
-   aff:false},
-
+   imgPrompt:"a tabby cat sitting on a wooden floor being gently examined, woman shown from chest level wearing casual top, cat face sharp and calm looking at camera, warm living room window light, single clean indoor scene",aff:false},
   {id:5, title:"Your Cat Is Slowing Down — This Could Be Why", cat:"Cat Health",
    url:`${BASE_URL}/simple-tips-to-know-signs-of-osteoarthritis-in-cats/`,
-   imgPrompt:"a senior grey tabby cat lying peacefully on a cream sofa cushion, eyes half closed relaxed, full cat body visible, soft morning window light, no humans in frame, single serene indoor pet portrait",
-   aff:false},
-
+   imgPrompt:"a senior grey tabby cat lying peacefully on a cream sofa cushion, eyes half closed relaxed, full cat body visible, soft morning window light, no humans in frame, single serene indoor pet portrait",aff:false},
   {id:6, title:"The Zoonosis Risk In Your Home You Don't Know About", cat:"Pet Health",
    url:`${BASE_URL}/digital-awareness-to-minimize-zoonosis-spread/`,
-   imgPrompt:"a happy family of three — father mother young child — sitting on a clean bright living room rug with a healthy golden retriever, all three faces naturally smiling and clearly visible, warm afternoon sunlight, single candid lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a happy family of three — father mother young child — sitting on a clean bright living room rug with a healthy golden retriever, all three faces naturally smiling and clearly visible, warm afternoon sunlight, single candid lifestyle scene",aff:false},
   {id:7, title:"Animal Safety Is Human Safety — The One Health Connection", cat:"One Health",
    url:`${BASE_URL}/animal-safety-protects-human-safety-one-health-guide/`,
-   imgPrompt:"a confident female vet in green scrubs crouching beside a healthy border collie in a bright green park, vet face naturally smiling and visible, dog alert looking forward, golden afternoon light, single clean outdoor scene",
-   aff:false},
-
+   imgPrompt:"a confident female vet in green scrubs crouching beside a healthy border collie in a bright green park, vet face naturally smiling and visible, dog alert looking forward, golden afternoon light, single clean outdoor scene",aff:false},
   {id:8, title:"Room-by-Room Pet Safety Guide Every Owner Needs", cat:"Pet Safety",
    url:`${BASE_URL}/room-by-room-pet-safety-guide-for-families/`,
-   imgPrompt:"a golden retriever puppy sitting on a clean bright modern kitchen floor looking curiously at camera, natural morning light from large window, full dog body visible, no humans, single indoor pet lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a golden retriever puppy sitting on a clean bright modern kitchen floor looking curiously at camera, natural morning light from large window, full dog body visible, no humans, single indoor pet lifestyle scene",aff:false},
   {id:9, title:"Indoor Cat Safety Mistakes That Put Your Pet at Risk", cat:"Cat Safety",
    url:`${BASE_URL}/indoor-cat-safety-checklist-for-everyday-home-risks/`,
-   imgPrompt:"an elegant short-haired tabby cat sitting upright on a white kitchen counter looking directly at camera, dramatic side window light, clean minimalist background, no humans, single focused indoor cat portrait",
-   aff:false},
-
+   imgPrompt:"an elegant short-haired tabby cat sitting upright on a white kitchen counter looking directly at camera, dramatic side window light, clean minimalist background, no humans, single focused indoor cat portrait",aff:false},
   {id:10, title:"Family Pet Emergency Plan — Are You Prepared?", cat:"Pet Safety",
    url:`${BASE_URL}/family-pet-emergency-plan-template/`,
-   imgPrompt:"a confident father standing in a bright living room holding a red first aid kit with a golden retriever sitting beside his feet, man face fully visible and calm, dog looking at camera, warm home lighting, single clean lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a confident father standing in a bright living room holding a red first aid kit with a golden retriever sitting beside his feet, man face fully visible and calm, dog looking at camera, warm home lighting, single clean lifestyle scene",aff:false},
   {id:11, title:"New Dog Owner? This Safety Checklist Could Save Your Pet", cat:"Dog Safety",
    url:`${BASE_URL}/pet-safety-checklist-for-new-dog-owners/`,
-   imgPrompt:"a happy young couple sitting on a bright apartment floor with a small beagle puppy between them, both faces fully visible and genuinely smiling, puppy looking at camera, warm indoor light, single candid lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a happy young couple sitting on a bright apartment floor with a small beagle puppy between them, both faces fully visible and genuinely smiling, puppy looking at camera, warm indoor light, single candid lifestyle scene",aff:false},
   {id:12, title:"Spring Pet Safety Checklist for Dogs and Cats", cat:"Pet Safety",
    url:`${BASE_URL}/spring-pet-safety-checklist-for-dogs-and-cats-easy-home-and-garden-tips/`,
-   imgPrompt:"a golden labrador running joyfully through a lush spring garden, full dog body in motion captured mid-stride, tongue out happily, vibrant green grass, soft flower bokeh background, no humans, single energetic outdoor scene",
-   aff:false},
-
+   imgPrompt:"a golden labrador running joyfully through a lush spring garden, full dog body in motion captured mid-stride, tongue out happily, vibrant green grass, soft flower bokeh background, no humans, single energetic outdoor scene",aff:false},
   {id:13, title:"Pet-Friendly Garden Ideas That Keep Your Pet Safe", cat:"Pet Safety",
    url:`${BASE_URL}/pet-friendly-garden-ideas-for-safer-outdoor-play/`,
-   imgPrompt:"a beagle dog standing in a beautifully maintained garden with colorful safe flowers, full dog body visible and alert, warm golden hour light, lush green surrounding plants, no humans, single serene garden scene",
-   aff:false},
-
+   imgPrompt:"a beagle dog standing in a beautifully maintained garden with colorful safe flowers, full dog body visible and alert, warm golden hour light, lush green surrounding plants, no humans, single serene garden scene",aff:false},
   {id:14, title:"Spring Break Pet Travel — The Complete Family Checklist", cat:"Pet Travel",
    url:`${BASE_URL}/spring-break-pet-travel-checklist-for-families/`,
-   imgPrompt:"a happy family loading a car on a sunny day, a golden retriever sitting in the open car boot looking excitedly at camera, family members faces visible and smiling in background, single bright outdoor candid scene",
-   aff:false},
-
+   imgPrompt:"a happy family loading a car on a sunny day, a golden retriever sitting in the open car boot looking excitedly at camera, family members faces visible and smiling in background, single bright outdoor candid scene",aff:false},
   {id:15, title:"The Complete Pet Safety Hub for Responsible Owners", cat:"Pet Safety",
    url:`${BASE_URL}/pet-safety-hub/`,
-   imgPrompt:"a smiling woman sitting on a white modern sofa with a well-groomed golden retriever on her right and a fluffy cat on her lap, woman face clearly visible and natural, both pets calm looking at camera, warm home lighting, single lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a smiling woman sitting on a white modern sofa with a well-groomed golden retriever on her right and a fluffy cat on her lap, woman face clearly visible and natural, both pets calm looking at camera, warm home lighting, single lifestyle scene",aff:false},
   {id:16, title:"Why Beagles Make the Most Loyal Family Dogs", cat:"Breed Guide",
    url:`${BASE_URL}/beagle-temperament/`,
-   imgPrompt:"a beautiful beagle sitting upright in a sunny park, face forward with soulful brown eyes tack-sharp, golden hour light warming the coat, green blurred background, no humans, single premium pet portrait",
-   aff:false},
-
+   imgPrompt:"a beautiful beagle sitting upright in a sunny park, face forward with soulful brown eyes tack-sharp, golden hour light warming the coat, green blurred background, no humans, single premium pet portrait",aff:false},
   {id:17, title:"The Boxer Dog — Gentle Giant Your Whole Family Will Love", cat:"Breed Guide",
    url:`${BASE_URL}/boxer-breed-temperament/`,
-   imgPrompt:"a powerful brindle boxer dog sitting proudly in a green backyard, full body visible, face sharp and alert toward camera, warm afternoon sunlight on coat, no humans, single outdoor pet portrait",
-   aff:false},
-
+   imgPrompt:"a powerful brindle boxer dog sitting proudly in a green backyard, full body visible, face sharp and alert toward camera, warm afternoon sunlight on coat, no humans, single outdoor pet portrait",aff:false},
   {id:18, title:"Why the Bulldog Is Actually Perfect for Apartment Life", cat:"Breed Guide",
    url:`${BASE_URL}/english-bulldog-temperament/`,
-   imgPrompt:"a wrinkly English bulldog lying comfortably on a grey velvet sofa in a stylish apartment, face forward in sharp focus showing natural wrinkles, warm lamp light, no humans, single cozy indoor scene",
-   aff:false},
-
+   imgPrompt:"a wrinkly English bulldog lying comfortably on a grey velvet sofa in a stylish apartment, face forward in sharp focus showing natural wrinkles, warm lamp light, no humans, single cozy indoor scene",aff:false},
   {id:19, title:"German Shepherd — The Dog That Would Do Anything for You", cat:"Breed Guide",
    url:`${BASE_URL}/german-shepherd-temperament/`,
-   imgPrompt:"a majestic black and tan German shepherd standing alert in an open golden wheat field at sunset, full body side profile, ears erect, dramatic warm backlight rim lighting fur, no humans, single heroic outdoor portrait",
-   aff:false},
-
+   imgPrompt:"a majestic black and tan German shepherd standing alert in an open golden wheat field at sunset, full body side profile, ears erect, dramatic warm backlight rim lighting fur, no humans, single heroic outdoor portrait",aff:false},
   {id:20, title:"Rottweilers Are Deeply Misunderstood — Here's the Truth", cat:"Breed Guide",
    url:`${BASE_URL}/rottweiler-temperament/`,
-   imgPrompt:"a gentle Rottweiler with soft eyes lying with its head resting on a couch cushion in a cozy living room, full dog face in sharp focus, warm lamp light, no humans visible, single intimate indoor pet portrait",
-   aff:false},
-
+   imgPrompt:"a gentle Rottweiler with soft eyes lying with its head resting on a couch cushion in a cozy living room, full dog face in sharp focus, warm lamp light, no humans visible, single intimate indoor pet portrait",aff:false},
   {id:21, title:"The Pomeranian — Big Personality in an Irresistible Body", cat:"Breed Guide",
    url:`${BASE_URL}/pomeranian-dog-breed-temperament-care-guide/`,
-   imgPrompt:"a perfectly groomed fluffy orange Pomeranian sitting on a clean white surface, face forward with bright eyes and fox-like expression, soft studio light from left, no humans, single premium luxury pet portrait",
-   aff:false},
-
+   imgPrompt:"a perfectly groomed fluffy orange Pomeranian sitting on a clean white surface, face forward with bright eyes and fox-like expression, soft studio light from left, no humans, single premium luxury pet portrait",aff:false},
   {id:22, title:"Labrador Retriever — The World's Most Beloved Family Dog", cat:"Breed Guide",
    url:`${BASE_URL}/`,
-   imgPrompt:"a golden Labrador retriever leaping joyfully at a beach at sunset, full body airborne freeze frame, warm golden light, ocean bokeh background, no humans, single dynamic outdoor pet scene",
-   aff:false},
-
+   imgPrompt:"a golden Labrador retriever leaping joyfully at a beach at sunset, full body airborne freeze frame, warm golden light, ocean bokeh background, no humans, single dynamic outdoor pet scene",aff:false},
   {id:23, title:"French Bulldog — Small Dog With the Biggest Heart", cat:"Breed Guide",
    url:`${BASE_URL}/`,
-   imgPrompt:"a French bulldog with large bat ears sitting on a cobblestone street, face in sharp focus looking at camera with expressive eyes, moody soft city light, no humans, single street-style pet portrait",
-   aff:false},
-
+   imgPrompt:"a French bulldog with large bat ears sitting on a cobblestone street, face in sharp focus looking at camera with expressive eyes, moody soft city light, no humans, single street-style pet portrait",aff:false},
   {id:24, title:"Border Collie — The Smartest Dog Breed on Earth", cat:"Breed Guide",
    url:`${BASE_URL}/`,
-   imgPrompt:"a black and white border collie standing alert in a misty highland meadow, intense eyes looking directly at camera, full body visible, dramatic sky background, no humans, single premium outdoor portrait",
-   aff:false},
-
+   imgPrompt:"a black and white border collie standing alert in a misty highland meadow, intense eyes looking directly at camera, full body visible, dramatic sky background, no humans, single premium outdoor portrait",aff:false},
   {id:25, title:"Cat Breeds Compared — Which One Is Right for Your Home?", cat:"Cat Guide",
    url:`${BASE_URL}/cat-breeds-comparison/`,
-   imgPrompt:"a single fluffy white Persian cat sitting elegantly on a light wooden floor, face forward with large amber eyes in sharp focus, soft diffused studio light, no humans, single luxury cat portrait",
-   aff:false},
-
+   imgPrompt:"a single fluffy white Persian cat sitting elegantly on a light wooden floor, face forward with large amber eyes in sharp focus, soft diffused studio light, no humans, single luxury cat portrait",aff:false},
   {id:26, title:"Why Everyone Falls in Love with Persian Cats", cat:"Cat Guide",
    url:`${BASE_URL}/persian-cat-temperament/`,
-   imgPrompt:"a stunning white Persian cat sitting on a royal blue velvet cushion, amber eyes glowing and sharp, silky fur perfectly groomed, dramatic overhead studio light, no humans, single premium cat portrait",
-   aff:false},
-
+   imgPrompt:"a stunning white Persian cat sitting on a royal blue velvet cushion, amber eyes glowing and sharp, silky fur perfectly groomed, dramatic overhead studio light, no humans, single premium cat portrait",aff:false},
   {id:27, title:"The Ragdoll Cat — Floppy, Fluffy and Totally Irresistible", cat:"Cat Guide",
    url:`${BASE_URL}/ragdoll-temperament/`,
-   imgPrompt:"a beautiful blue-eyed ragdoll cat being cradled in the arms of a smiling woman, woman face naturally visible and warm, cat completely relaxed looking at camera, soft sunlit indoor scene, single lifestyle portrait",
-   aff:false},
-
+   imgPrompt:"a beautiful blue-eyed ragdoll cat being cradled in the arms of a smiling woman, woman face naturally visible and warm, cat completely relaxed looking at camera, soft sunlit indoor scene, single lifestyle portrait",aff:false},
   {id:28, title:"Your Complete Month-by-Month Kitten Growth Guide", cat:"Cat Guide",
    url:`${BASE_URL}/new-kitten-planner/`,
-   imgPrompt:"a tiny orange tabby kitten sitting inside a small wicker basket lined with soft white wool, eyes wide and curious looking at camera, natural side window light, no humans, single irresistible pet portrait",
-   aff:false},
-
+   imgPrompt:"a tiny orange tabby kitten sitting inside a small wicker basket lined with soft white wool, eyes wide and curious looking at camera, natural side window light, no humans, single irresistible pet portrait",aff:false},
   {id:29, title:"Groom Your Cat at Home Like a Pro — Zero Scratches", cat:"Cat Care",
    url:`${BASE_URL}/cat-grooming-guide-2/`,
-   imgPrompt:"a relaxed fluffy Maine Coon cat sitting calmly being gently brushed, woman shown from shoulders down in casual clothes, cat face in sharp focus looking peaceful, warm bathroom light, single clean lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a relaxed fluffy Maine Coon cat sitting calmly being gently brushed, woman shown from shoulders down in casual clothes, cat face in sharp focus looking peaceful, warm bathroom light, single clean lifestyle scene",aff:false},
   {id:30, title:"Yes, You Can Walk Your Cat — Here's the Complete Guide", cat:"Cat Guide",
    url:`${BASE_URL}/how-to-walk-your-cat-safely-harness-training-for-beginners/`,
-   imgPrompt:"a confident tabby cat walking on a harness through a lush green park path, full cat body visible mid-stride, warm afternoon sunlight, leash visible extending off frame, no human visible, single adventurous outdoor scene",
-   aff:false},
-
+   imgPrompt:"a confident tabby cat walking on a harness through a lush green park path, full cat body visible mid-stride, warm afternoon sunlight, leash visible extending off frame, no human visible, single adventurous outdoor scene",aff:false},
   {id:31, title:"How to Stop Cat Scratches Before They Draw Blood", cat:"Cat Care",
    url:`${BASE_URL}/how-to-prevent-cat-paw-scratches-at-home/`,
-   imgPrompt:"a playful tabby kitten with claws extended mid-swipe at a tall sisal scratching post, freeze frame action, full kitten body visible, warm living room light, no humans, single energetic indoor scene",
-   aff:false},
-
+   imgPrompt:"a playful tabby kitten with claws extended mid-swipe at a tall sisal scratching post, freeze frame action, full kitten body visible, warm living room light, no humans, single energetic indoor scene",aff:false},
   {id:32, title:"The Healthy Cat-Human Bond That Changes Everything", cat:"Cat Guide",
    url:`${BASE_URL}/healthy-cat-bond-for-young-ladies-at-home/`,
-   imgPrompt:"a young woman lying on a cozy bedroom rug reading a book with a purring tabby cat resting beside her, woman face naturally relaxed and visible, warm golden afternoon light through curtains, single intimate lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a young woman lying on a cozy bedroom rug reading a book with a purring tabby cat resting beside her, woman face naturally relaxed and visible, warm golden afternoon light through curtains, single intimate lifestyle scene",aff:false},
   {id:33, title:"What's Actually Inside a Pet First Aid Kit?", cat:"Pet Health",
    url:`${BASE_URL}/pet-first-aid-kit-checklist/`,
-   imgPrompt:"a neat top-down flat-lay of pet first aid items on white marble — bandage roll, antiseptic bottle, latex gloves, thermometer — each item clearly visible and separated, clean bright overhead light, no text labels, no animals",
-   aff:false},
-
+   imgPrompt:"a neat top-down flat-lay of pet first aid items on white marble — bandage roll, antiseptic bottle, latex gloves, thermometer — each item clearly visible and separated, clean bright overhead light, no text labels, no animals",aff:false},
   {id:34, title:"Never Miss a Pet Vaccine Again With This Tracker", cat:"Pet Health",
    url:`${BASE_URL}/pet-vaccine-tracker/`,
-   imgPrompt:"a healthy beagle puppy sitting alert on a clean clinic table, face sharp and bright eyes looking at camera, soft clinic lighting, no hands or needles in frame, no humans, single clean professional pet portrait",
-   aff:false},
-
+   imgPrompt:"a healthy beagle puppy sitting alert on a clean clinic table, face sharp and bright eyes looking at camera, soft clinic lighting, no hands or needles in frame, no humans, single clean professional pet portrait",aff:false},
   {id:35, title:"These Common House Plants Are Silently Poisoning Your Pet", cat:"Pet Safety",
    url:`${BASE_URL}/common-plants-that-may-be-toxic-to-pets/`,
-   imgPrompt:"a curious golden kitten sniffing a potted lily plant on a windowsill, kitten face in sharp focus with wide alert eyes, soft natural window light, full plant visible and recognizable, no humans, single clean indoor scene",
-   aff:false},
-
+   imgPrompt:"a curious golden kitten sniffing a potted lily plant on a windowsill, kitten face in sharp focus with wide alert eyes, soft natural window light, full plant visible and recognizable, no humans, single clean indoor scene",aff:false},
   {id:36, title:"Score Your Pet's Hygiene — Take the 5-Minute Test", cat:"Pet Hygiene",
    url:`${BASE_URL}/pet-hygiene-score-card/`,
-   imgPrompt:"a freshly groomed golden retriever and a fluffy white Persian cat sitting side by side on a clean white backdrop, both animals facing camera with gleaming healthy coats, bright even studio lighting, no humans, single premium animal portrait",
-   aff:false},
-
+   imgPrompt:"a freshly groomed golden retriever and a fluffy white Persian cat sitting side by side on a clean white backdrop, both animals facing camera with gleaming healthy coats, bright even studio lighting, no humans, single premium animal portrait",aff:false},
   {id:37, title:"Answers to Pet Food Questions You Were Afraid to Ask", cat:"Pet Nutrition",
    url:`${BASE_URL}/pet-food-queries/`,
-   imgPrompt:"a healthy golden labrador sitting beside two ceramic bowls filled with fresh dry kibble and wet food on a clean kitchen floor, dog looking at the food with eager expression, warm kitchen light, no humans, single lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a healthy golden labrador sitting beside two ceramic bowls filled with fresh dry kibble and wet food on a clean kitchen floor, dog looking at the food with eager expression, warm kitchen light, no humans, single lifestyle scene",aff:false},
   {id:38, title:"Healthy Pets + Happy Humans — The Bond Science Proves", cat:"Pet Wellness",
    url:`${BASE_URL}/healthy-pets-and-human-bond-for-family-life/`,
-   imgPrompt:"a joyful family of four running through a green park at golden sunset with a golden retriever running alongside them, all faces naturally happy and visible, motion captured authentically, single wide outdoor lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a joyful family of four running through a green park at golden sunset with a golden retriever running alongside them, all faces naturally happy and visible, motion captured authentically, single wide outdoor lifestyle scene",aff:false},
   {id:39, title:"Brain Games for Dogs and Cats That Prevent Boredom", cat:"Pet Training",
    url:`${BASE_URL}/best-cognitive-exercises-that-can-change-your-brain/`,
-   imgPrompt:"a focused border collie using its nose to push a wooden puzzle toy on a hardwood floor, full dog body visible, intense concentrated expression, warm indoor natural light, no humans, single smart pet activity scene",
-   aff:false},
-
+   imgPrompt:"a focused border collie using its nose to push a wooden puzzle toy on a hardwood floor, full dog body visible, intense concentrated expression, warm indoor natural light, no humans, single smart pet activity scene",aff:false},
   {id:40, title:"Basic Pet Training Tools That Actually Work at Home", cat:"Pet Training",
    url:`${BASE_URL}/basic-pet-training-tools-for-better-command-prompting-and-home-behavior/`,
-   imgPrompt:"a golden labrador sitting perfectly upright in a bright living room in obedient sit-stay position, alert and looking forward, warm natural light, full dog body visible, no humans, single clean indoor training scene",
-   aff:false},
-
+   imgPrompt:"a golden labrador sitting perfectly upright in a bright living room in obedient sit-stay position, alert and looking forward, warm natural light, full dog body visible, no humans, single clean indoor training scene",aff:false},
   {id:41, title:"Your Dog and Cat Vaccine Record — Keep It Updated", cat:"Pet Health",
    url:`${BASE_URL}/dog-and-cat-vaccine-tracker-for-pet-owners/`,
-   imgPrompt:"a golden retriever puppy sitting on a vet clinic table looking healthy and alert, face sharp with bright eyes looking at camera, warm clinic background softly blurred, no hands or syringes visible, single professional pet portrait",
-   aff:false},
-
+   imgPrompt:"a golden retriever puppy sitting on a vet clinic table looking healthy and alert, face sharp with bright eyes looking at camera, warm clinic background softly blurred, no hands or syringes visible, single professional pet portrait",aff:false},
   {id:42, title:"The Ultimate Pet Safety Hub — Everything in One Place", cat:"Resources",
    url:`${BASE_URL}/useful-checklists-and-care-resources-to-support-everyday-pet-life/`,
-   imgPrompt:"a clean flat-lay of pet care items arranged neatly on a natural wood surface — red leash, grooming brush, ceramic bowl, rope toy, small first aid box — items separated clearly, warm overhead light, no text, no animals, single styled product scene",
-   aff:false},
-
+   imgPrompt:"a clean flat-lay of pet care items arranged neatly on a natural wood surface — red leash, grooming brush, ceramic bowl, rope toy, small first aid box — items separated clearly, warm overhead light, no text, no animals, single styled product scene",aff:false},
   {id:43, title:"Free Pet Care Booklet — Download and Save It Today", cat:"Resources",
    url:`${BASE_URL}/free-pet-care-faq-booklet/`,
-   imgPrompt:"a golden retriever sitting beside a clean wooden desk with a closed notebook on it, dog looking at camera with bright eyes, warm home office light from window, no humans, single clean lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a golden retriever sitting beside a clean wooden desk with a closed notebook on it, dog looking at camera with bright eyes, warm home office light from window, no humans, single clean lifestyle scene",aff:false},
   {id:44, title:"Helpful Everyday Wellness Ideas for Safer, Smarter Pets", cat:"Pet Wellness",
    url:`${BASE_URL}/helpful-everyday-wellness-ideas-for-safer-pets-and-smarter-homes/`,
-   imgPrompt:"a woman in yoga pose on a mat in a sunlit living room with a calm tabby cat sitting beside the mat watching her, woman face naturally visible in profile, soft morning light, single peaceful wellness lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a woman in yoga pose on a mat in a sunlit living room with a calm tabby cat sitting beside the mat watching her, woman face naturally visible in profile, soft morning light, single peaceful wellness lifestyle scene",aff:false},
   {id:45, title:"Pet Home Safety — The Room-by-Room Guide for Families", cat:"Pet Safety",
    url:`${BASE_URL}/pet-home-safety-guide-for-families-2/`,
-   imgPrompt:"a golden retriever puppy sitting in the center of a bright modern living room, full dog body visible and alert, clean tidy home surroundings, warm natural light from window, no humans, single safe home scene",
-   aff:false},
-
+   imgPrompt:"a golden retriever puppy sitting in the center of a bright modern living room, full dog body visible and alert, clean tidy home surroundings, warm natural light from window, no humans, single safe home scene",aff:false},
   {id:46, title:"The LED Nail Clipper That Makes Grooming Stress-Free", cat:"Product",
    url:"https://www.dhgate.com/product/led-light-pet-nail-clipper-with-amplification/1010092124.html",
-   imgPrompt:"a modern silver LED pet nail clipper placed on a white marble surface, product in sharp focus showing the LED lens and clipper head clearly, soft diffused studio light from above, no animals no humans in frame, single clean product photography",
-   aff:true},
-
+   imgPrompt:"a modern silver LED pet nail clipper placed on a white marble surface, product in sharp focus showing the LED lens and clipper head clearly, soft diffused studio light from above, no animals no humans in frame, single clean product photography",aff:true},
   {id:47, title:"This Grooming Kit Handles Everything Your Pet Needs", cat:"Product",
    url:"https://www.dhgate.com/product/combs-dog-hair-remover-cat-brush-grooming/1028087374.html",
-   imgPrompt:"a slicker brush, wide-tooth comb and small scissors arranged neatly on a dark wood surface, each item clearly separated and in focus, moody dramatic overhead light, no animals no humans, single clean product flat-lay scene",
-   aff:true},
-
+   imgPrompt:"a slicker brush, wide-tooth comb and small scissors arranged neatly on a dark wood surface, each item clearly separated and in focus, moody dramatic overhead light, no animals no humans, single clean product flat-lay scene",aff:true},
   {id:48, title:"See Exactly What Your Dog Does When You're Not Home", cat:"Product",
    url:"https://www.dhgate.com/product/dog-collars-hd-1080p-wireless-collar-camera/1032506070.html",
-   imgPrompt:"a golden retriever wearing a sleek black smart collar with a small camera module clearly visible on it, dog sitting outdoors in natural daylight, full dog face and collar in sharp focus, no humans, single clean tech pet scene",
-   aff:true},
-
+   imgPrompt:"a golden retriever wearing a sleek black smart collar with a small camera module clearly visible on it, dog sitting outdoors in natural daylight, full dog face and collar in sharp focus, no humans, single clean tech pet scene",aff:true},
   {id:49, title:"The 2-in-1 Pet Stroller That Changes Every Walk", cat:"Product",
    url:"https://bestchoiceproducts.com/products/2-in-1-pet-dog-bike-trailer",
-   imgPrompt:"a small fluffy white dog sitting inside an open navy blue pet stroller in a sunny park, dog face alert and looking at camera, full stroller visible, green blurred trees background, no humans, single clean outdoor product lifestyle scene",
-   aff:true},
-
+   imgPrompt:"a small fluffy white dog sitting inside an open navy blue pet stroller in a sunny park, dog face alert and looking at camera, full stroller visible, green blurred trees background, no humans, single clean outdoor product lifestyle scene",aff:true},
   {id:50, title:"8-Piece Grooming Kit That Cleans Itself While You Use It", cat:"Product",
    url:"https://www.dhgate.com/product/8pcs-set-dog-grooming-kit-self-cleaning-pet/1087614127.html",
-   imgPrompt:"a fluffy white Samoyed dog being groomed with an electric slicker brush, dog face in sharp focus looking relaxed and happy, brush visible against fluffy coat, clean white studio background, no human faces visible, single premium grooming scene",
-   aff:true},
-
+   imgPrompt:"a fluffy white Samoyed dog being groomed with an electric slicker brush, dog face in sharp focus looking relaxed and happy, brush visible against fluffy coat, clean white studio background, no human faces visible, single premium grooming scene",aff:true},
   {id:51, title:"Clean Your Dog's Paws in 10 Seconds — No Water Needed", cat:"Product",
    url:"https://www.dhgate.com/product/pet-foot-paw-cleaner-100ml-foam-waterless/1010228089.html",
-   imgPrompt:"a single golden retriever paw on a clean white surface with white foam cleanser applied to it, paw perfectly formed with natural fur between toes, soft studio light, absolutely NO human hands or body parts in frame, single close-up product scene",
-   aff:true},
-
+   imgPrompt:"a single golden retriever paw on a clean white surface with white foam cleanser applied to it, paw perfectly formed with natural fur between toes, soft studio light, absolutely NO human hands or body parts in frame, single close-up product scene",aff:true},
   {id:52, title:"Keep Your Dog's Teeth Sparkling With This Simple Tool", cat:"Product",
    url:"https://www.dhgate.com/product/100-pieces-batch-of-pet-finger-toothbrushes/1010228766.html",
-   imgPrompt:"a happy golden retriever with mouth open showing clean white teeth, face in sharp focus with bright expression, clean white studio background, soft even light, no human hands visible in frame, single premium dental dog portrait",
-   aff:true},
-
+   imgPrompt:"a happy golden retriever with mouth open showing clean white teeth, face in sharp focus with bright expression, clean white studio background, soft even light, no human hands visible in frame, single premium dental dog portrait",aff:true},
   {id:53, title:"Vet-Recommended Shampoo for Dogs With Sensitive Skin", cat:"Product",
    url:"https://www.dhgate.com/product/pet-shampoo-for-cats-and-dogs-cleansing-bathing/1089431467.html",
-   imgPrompt:"a golden retriever in a white bathtub covered in fluffy white shampoo suds, dog face looking happy with mouth open, warm bright bathroom light, no human faces visible, single clean pet bathing lifestyle scene",
-   aff:true},
-
+   imgPrompt:"a golden retriever in a white bathtub covered in fluffy white shampoo suds, dog face looking happy with mouth open, warm bright bathroom light, no human faces visible, single clean pet bathing lifestyle scene",aff:true},
   {id:54, title:"How a Healthy Bond With Your Cat Improves Your Life", cat:"Cat Wellness",
    url:`${BASE_URL}/healthy-cat-bond-for-young-ladies-at-home/`,
-   imgPrompt:"a young woman sitting cross-legged on a white bed in morning light with an elegant grey cat sitting beside her, woman face naturally peaceful and visible, cat looking at camera, soft diffused window light, single calm lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a young woman sitting cross-legged on a white bed in morning light with an elegant grey cat sitting beside her, woman face naturally peaceful and visible, cat looking at camera, soft diffused window light, single calm lifestyle scene",aff:false},
   {id:55, title:"Safe Drinking Water for Pets — 7 Rules You Must Follow", cat:"Pet Health",
    url:`${BASE_URL}/safe-drinking-water-at-home-7-hygiene-rules-2/`,
-   imgPrompt:"a golden retriever drinking from a modern stainless steel pet water fountain on a clean kitchen floor, dog face in sharp focus mid-drink, water stream clearly visible and crystal clear, warm kitchen light, no humans, single lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a golden retriever drinking from a modern stainless steel pet water fountain on a clean kitchen floor, dog face in sharp focus mid-drink, water stream clearly visible and crystal clear, warm kitchen light, no humans, single lifestyle scene",aff:false},
   {id:56, title:"How Pets Protect Children's Mental Health at Home", cat:"Pet Wellness",
    url:`${BASE_URL}/kids-off-screens-best-alternatives-for-eye-health/`,
-   imgPrompt:"a young child around 7 years old sitting on a bright living room rug laughing naturally while a fluffy golden puppy sits beside them, child face fully visible and joyful, puppy cute and energetic, warm natural light, single candid lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a young child around 7 years old sitting on a bright living room rug laughing naturally while a fluffy golden puppy sits beside them, child face fully visible and joyful, puppy cute and energetic, warm natural light, single candid lifestyle scene",aff:false},
   {id:57, title:"One Health — Why Protecting Animals Protects All of Us", cat:"One Health",
    url:`${BASE_URL}/one-health-a-pillar-for-climate-sustainability/`,
-   imgPrompt:"a wildlife veterinarian in khaki field uniform crouching in a lush green forest examining a small bird held gently in gloved hands, vet face naturally visible and focused, golden light through forest canopy, single documentary nature scene",
-   aff:false},
-
+   imgPrompt:"a wildlife veterinarian in khaki field uniform crouching in a lush green forest examining a small bird held gently in gloved hands, vet face naturally visible and focused, golden light through forest canopy, single documentary nature scene",aff:false},
   {id:58, title:"Your Pet Is Your Family — Here's How to Treat Them Like It", cat:"Pet Wellness",
    url:`${BASE_URL}/pet-safety-hub/`,
-   imgPrompt:"a multi-generational family of five — grandparents parents and child — sitting together in a sunlit living room with a golden retriever lying among them, all faces naturally visible and happy, warm afternoon light, single wide family lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a multi-generational family of five — grandparents parents and child — sitting together in a sunlit living room with a golden retriever lying among them, all faces naturally visible and happy, warm afternoon light, single wide family lifestyle scene",aff:false},
   {id:59, title:"The Complete Dog Vaccine Guide — What Every Owner Must Know", cat:"Dog Health",
    url:`${BASE_URL}/pet-vaccine-tracker/`,
-   imgPrompt:"a female veterinarian in white coat showing a tablet to a man in a bright modern clinic, golden puppy sitting on exam table between them, both adult faces naturally visible and engaged, warm clinical light, single professional lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a female veterinarian in white coat showing a tablet to a man in a bright modern clinic, golden puppy sitting on exam table between them, both adult faces naturally visible and engaged, warm clinical light, single professional lifestyle scene",aff:false},
   {id:60, title:"Pet Food FAQ — Every Question Answered By Experts", cat:"Pet Nutrition",
    url:`${BASE_URL}/pet-food-queries/`,
-   imgPrompt:"two ceramic bowls side by side on a clean kitchen counter — dry kibble in one and wet food in other — a healthy cat and dog sitting calmly behind the bowls looking at camera, warm kitchen light, no humans, single clean food lifestyle scene",
-   aff:false},
-
+   imgPrompt:"two ceramic bowls side by side on a clean kitchen counter — dry kibble in one and wet food in other — a healthy cat and dog sitting calmly behind the bowls looking at camera, warm kitchen light, no humans, single clean food lifestyle scene",aff:false},
   {id:61, title:"How to Keep Your Pet Safe This Season — Full Guide", cat:"Pet Safety",
    url:`${BASE_URL}/pet-safety-hub/`,
-   imgPrompt:"a husky dog lying contentedly on a cozy sofa in an autumn living room, full dog body visible and relaxed, warm amber lamp light, autumn leaves visible through window, no humans, single warm indoor lifestyle scene",
-   aff:false},
-
+   imgPrompt:"a husky dog lying contentedly on a cozy sofa in an autumn living room, full dog body visible and relaxed, warm amber lamp light, autumn leaves visible through window, no humans, single warm indoor lifestyle scene",aff:false},
   {id:62, title:"Train Your Pet Better With These 5 Proven Tools", cat:"Pet Training",
    url:`${BASE_URL}/basic-pet-training-tools-for-better-command-prompting-and-home-behavior/`,
-   imgPrompt:"a male dog trainer in outdoor setting giving a clear hand signal to an attentive German shepherd sitting perfectly in front of him, trainer face naturally confident and visible, dog alert looking up at trainer, warm daylight, single professional training scene",
-   aff:false},
+   imgPrompt:"a male dog trainer in outdoor setting giving a clear hand signal to an attentive German shepherd sitting perfectly in front of him, trainer face naturally confident and visible, dog alert looking up at trainer, warm daylight, single professional training scene",aff:false},
 ];
 
 const STYLES = ["Educational","Storytelling","How-To","Hook/Viral","FAQ/List"];
@@ -579,7 +447,6 @@ async function runPost() {
   if(!PAGE_TOKEN) await fetchPageToken();
   await retryPendingGroupPosts();
   await checkAndCommentFallback();
-
   const idx = postIndex % 62;
   const round = Math.floor(postIndex / 62) + 1;
   const post = POSTS[idx];
@@ -587,17 +454,13 @@ async function runPost() {
   const utm = buildUTM(post);
   const seed = post.id * 137 + styleIndex * 31;
   const imageUrl = buildImageUrl(post.imgPrompt, seed);
-
   if(idx === 0 && postIndex > 0) { postedGroupsThisCycle.clear(); log(`🔄 New round ${round} — group cycle reset`); }
-
   log(`━━━ P${String(post.id).padStart(2,'0')} [Round ${round}] | Next group: ${pickNextGroup()?.name||'none'}`);
   log(`Title: ${post.title}`);
-
   try {
     const caption = await generateCaption(post, style);
     log(`Caption ready (${caption.length} chars)`);
     const fullCaption = buildFullCaption(caption, utm, post);
-
     try {
       const pageId = await publishToPage(fullCaption, imageUrl, utm);
       log(`✅ PAGE — ID: ${pageId}`);
@@ -607,7 +470,6 @@ async function runPost() {
       lastPagePostTitle = post.title;
       sendHourlyGroupEmail(lastPagePostUrl, lastPagePostTitle).catch(e => log('📧 Email err: '+e.message));
     } catch(e) { log(`❌ PAGE failed: ${e.message}`); }
-
     await postToGroupWithRetry(fullCaption, imageUrl, utm, post);
     postIndex++;
     styleIndex++;
@@ -621,7 +483,6 @@ async function runPost() {
   }
 }
 
-// ── EMAIL ─────────────────────────────────────────────────────────────────────
 function sendEmail(subject, htmlBody) {
   return new Promise((resolve) => {
     const resendKey = (process.env.RESEND_KEY || '').trim();
@@ -644,12 +505,10 @@ function sendEmail(subject, htmlBody) {
   });
 }
 
-// ── WHATSAPP-STYLE EMAIL — OPENS PAGE POST DIRECTLY ──────────────────────────
 function buildHourlyEmail(postUrl, postTitle, group1, group2, groupNum1, groupNum2, totalGroups) {
   const now = new Date().toLocaleString('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit',hour12:true});
   const dateStr = new Date().toLocaleDateString('en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric'});
-  const postShareUrl = postUrl; // Button opens the actual FB page post — Share button immediately visible
-
+  const postShareUrl = postUrl;
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"><title>OHG Share</title></head>
 <body style="margin:0;padding:0;background:#ECE5DD;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh;">
 <div style="max-width:500px;margin:0 auto;background:#ECE5DD;min-height:100vh;">
@@ -660,7 +519,6 @@ function buildHourlyEmail(postUrl, postTitle, group1, group2, groupNum1, groupNu
 </div>
 <div style="padding:14px 12px;">
   <div style="text-align:center;margin-bottom:14px;"><span style="background:rgba(255,255,255,0.8);color:#667781;font-size:11px;padding:3px 12px;border-radius:8px;display:inline-block;">${dateStr}</span></div>
-
   <div style="display:flex;gap:8px;margin-bottom:10px;align-items:flex-end;">
     <div style="width:26px;height:26px;border-radius:50%;background:#128C7E;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🤖</div>
     <div style="background:#FFF;border-radius:2px 14px 14px 14px;padding:11px 14px;max-width:87%;box-shadow:0 1px 3px rgba(0,0,0,0.12);">
@@ -670,15 +528,12 @@ function buildHourlyEmail(postUrl, postTitle, group1, group2, groupNum1, groupNu
       <div style="color:#8696A0;font-size:10px;text-align:right;margin-top:5px;">${now} ✓✓</div>
     </div>
   </div>
-
   <div style="text-align:center;margin:14px 0 6px;"><span style="background:rgba(255,255,255,0.8);color:#667781;font-size:11px;padding:4px 14px;border-radius:8px;display:inline-block;">📤 Tap button → FB post opens → Share → Share to a Group</span></div>
-
   <div style="display:flex;gap:8px;margin-bottom:14px;padding-left:34px;">
     <div style="background:#FFF;border-radius:2px 14px 14px 14px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.12);width:100%;">
       <div style="color:#111;font-size:12px;line-height:2.0;">1️⃣ Tap green button below<br>2️⃣ Facebook post opens — Share visible<br>3️⃣ Tap <strong>Share → Share to a Group</strong><br>4️⃣ Type group name → tap <strong>Post</strong><br>5️⃣ Wait 1 min → repeat for Group 2</div>
     </div>
   </div>
-
   <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-end;">
     <div style="width:26px;height:26px;border-radius:50%;background:#128C7E;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🤖</div>
     <div style="background:#FFF;border-radius:2px 14px 14px 14px;padding:14px;max-width:87%;box-shadow:0 1px 3px rgba(0,0,0,0.12);width:100%;">
@@ -697,14 +552,12 @@ function buildHourlyEmail(postUrl, postTitle, group1, group2, groupNum1, groupNu
       <div style="color:#8696A0;font-size:10px;text-align:right;margin-top:8px;">${now} ✓✓</div>
     </div>
   </div>
-
   <div style="display:flex;gap:8px;margin-bottom:8px;padding-left:34px;">
     <div style="background:#FFF;border-radius:2px 14px 14px 14px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.12);">
       <div style="color:#555;font-size:13px;">⏱ Done Group 1? Wait <strong style="color:#111;">1 minute</strong> then tap Group 2</div>
       <div style="color:#8696A0;font-size:10px;text-align:right;margin-top:4px;">${now} ✓✓</div>
     </div>
   </div>
-
   <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-end;">
     <div style="width:26px;height:26px;border-radius:50%;background:#128C7E;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🤖</div>
     <div style="background:#FFF;border-radius:2px 14px 14px 14px;padding:14px;max-width:87%;box-shadow:0 1px 3px rgba(0,0,0,0.12);width:100%;">
@@ -723,13 +576,11 @@ function buildHourlyEmail(postUrl, postTitle, group1, group2, groupNum1, groupNu
       <div style="color:#8696A0;font-size:10px;text-align:right;margin-top:8px;">${now} ✓✓</div>
     </div>
   </div>
-
   <div style="display:flex;gap:8px;margin-bottom:20px;padding-left:34px;">
     <div style="background:#FFF;border-radius:2px 14px 14px 14px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.12);">
       <div style="color:#555;font-size:12px;line-height:1.6;">🎉 Both groups shared! Great job.<br><span style="color:#25D366;font-weight:700;">Next post in ~60 minutes.</span></div>
     </div>
   </div>
-
   <div style="background:rgba(255,255,255,0.75);border-radius:14px;padding:12px 8px;margin-bottom:8px;">
     <div style="display:flex;justify-content:space-around;align-items:center;">
       <div style="text-align:center;"><div style="color:#111;font-size:18px;font-weight:900;">62</div><div style="color:#8696A0;font-size:9px;">Posts</div></div>
@@ -766,7 +617,6 @@ async function sendHourlyGroupEmail(postUrl, postTitle) {
   log(`📧 Email sent → ${group1.name} + ${group2.name}`);
 }
 
-// STARTUP
 log('OHG Pet Autopilot Server v6 starting...');
 log(`Posts: 62 | Groups: ${PET_GROUPS.length} | Interval: ${INTERVAL_MS/60000}min | Hours: ${ACTIVE_FROM}-${ACTIVE_TO} EST`);
 log(`Token: ${FB_SYS_TOKEN?'SET len='+FB_SYS_TOKEN.length:'MISSING'} | Claude: ${CLAUDE_KEY?'SET':'MISSING'}`);
@@ -780,40 +630,287 @@ fetchPageToken().then(() => {
   setInterval(checkAndCommentFallback, 30 * 60000);
 });
 
-// ── DASHBOARD ─────────────────────────────────────────────────────────────────
+// ── HTTP SERVER ───────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 http.createServer((req, res) => {
+
   if(req.url && req.url.startsWith('/auth/callback')) {
     res.writeHead(200,{'Content-Type':'text/html'});
     res.end(`<!DOCTYPE html><html><body style="background:#0a0f0d;color:#2dff8e;font-family:Arial;padding:40px;text-align:center"><h2>OHG Token Capture</h2><script>const t=new URLSearchParams(window.location.hash.substring(1)).get('access_token');if(t){document.body.innerHTML+='<p style="word-break:break-all;background:#111;padding:20px;border-radius:8px"><b>YOUR GROUP_TOKEN:</b><br>'+t+'</p>';}else{document.body.innerHTML+='<p>No token found</p>';}<\/script></body></html>`);
     return;
   }
+
   if(req.url === '/api/stats') {
     const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
     const nextPost = POSTS[postIndex%62];
     const activeG = PET_GROUPS.filter(g=>!groupStats[g.id].permanent).length;
     const bannedG = PET_GROUPS.filter(g=>groupStats[g.id].permanent).length;
+    const coolG   = PET_GROUPS.filter(g=>groupStats[g.id].cooldown&&!groupStats[g.id].permanent).length;
     const nextGroup = pickNextGroup()||PET_GROUPS[0];
+    const payload = {
+      server:'OHG v6', time_est:est.toISOString(), is_active:isActiveHour(),
+      post_index:postIndex%62+1, round:Math.floor(postIndex/62)+1,
+      total_page:totalPosted, total_group:totalGroupPosted, total_comments:totalComments,
+      pending_count:pendingGroupPosts.length, groups_total:PET_GROUPS.length,
+      groups_active:activeG, groups_banned:bannedG, groups_cooldown:coolG,
+      groups_used_cycle:postedGroupsThisCycle.size,
+      next_post:{id:nextPost.id, title:nextPost.title, cat:nextPost.cat},
+      next_group:{id:nextGroup.id, name:nextGroup.name},
+      page_token_ok: PAGE_TOKEN ? true : false,
+      group_stats: PET_GROUPS.map(g=>({
+        id:g.id, name:g.name,
+        success:groupStats[g.id].success,
+        fail:groupStats[g.id].fail,
+        cooldown:groupStats[g.id].cooldown,
+        permanent:groupStats[g.id].permanent||false,
+        is_next: nextGroup && g.id===nextGroup.id
+      })),
+      pending_posts: pendingGroupPosts.map(p=>({
+        title:p.title, group_name:p.groupName,
+        age_min:Math.round((Date.now()-p.postedAt)/60000),
+        commented:p.commentFired||false
+      })),
+      recent_logs: logs.slice(0,60)
+    };
     res.writeHead(200,{'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Cache-Control':'no-cache'});
-    res.end(JSON.stringify({server:'OHG v6',time_est:est.toISOString(),is_active:isActiveHour(),post_index:postIndex%62+1,round:Math.floor(postIndex/62)+1,total_page:totalPosted,total_group:totalGroupPosted,total_comments:totalComments,pending_count:pendingGroupPosts.length,groups_total:PET_GROUPS.length,groups_active:activeG,groups_banned:bannedG,groups_used_cycle:postedGroupsThisCycle.size,next_post:{id:nextPost.id,title:nextPost.title},next_group:{id:nextGroup.id,name:nextGroup.name},recent_logs:logs.slice(0,60)}));
+    res.end(JSON.stringify(payload));
     return;
   }
+
+  // ── NEW PREMIUM DASHBOARD ─────────────────────────────────────────────────
   const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
   const nextPost = POSTS[postIndex%62];
   const nextGroup = pickNextGroup()||PET_GROUPS[0];
   const round = Math.floor(postIndex/62)+1;
   const activeGroups = PET_GROUPS.filter(g=>!groupStats[g.id].permanent);
   const permanentGroups = PET_GROUPS.filter(g=>groupStats[g.id].permanent);
-  const html=`<!DOCTYPE html><html><head><title>OHG Pet Autopilot v6</title><meta http-equiv="refresh" content="30"><style>*{box-sizing:border-box;}body{font-family:Arial;background:#0a0f0d;color:#e8f5ec;padding:16px;max-width:1100px;margin:0 auto;font-size:13px;}h1{color:#2dff8e;margin:0 0 4px;}h3{color:#7a9e85;margin:12px 0 6px;}.stat{display:inline-block;background:#111a15;border:1px solid #1e2e23;border-radius:8px;padding:10px 16px;margin:4px;text-align:center;min-width:90px;}.sv{font-size:22px;font-weight:bold;color:#2dff8e;}.sl{font-size:10px;color:#4a6652;margin-top:3px;}.badge{background:#1a2e20;border:1px solid #2dff8e;border-radius:4px;padding:1px 7px;font-size:10px;color:#2dff8e;margin-left:6px;}table{width:100%;border-collapse:collapse;font-size:11px;}td,th{padding:4px 8px;text-align:left;border-bottom:1px solid #1a2e1a;}th{color:#2dff8e;background:#0d1a10;}.log{background:#000;border-radius:8px;padding:12px;font-family:monospace;font-size:10px;max-height:400px;overflow-y:auto;}.log div{padding:1px 0;border-bottom:1px solid #080808;}.box{background:#0d1a10;border:1px solid #1e2e23;border-radius:8px;padding:12px;margin:10px 0;}.warn{border-color:#ff8c00;background:#120d00;}.ok{color:#2dff8e;}.err{color:#ff5252;}.info{color:#64b5f6;}.warn-t{color:#ffb830;}</style></head><body>
-<h1>🐾 OHG Pet Autopilot v6 <span class="badge">62 Posts · 51 Groups · 24/7 · Premium Images</span></h1>
-<p style="color:#4a6652">${est.toLocaleString('en-US',{timeZone:'America/New_York'})} EST | Auto-refresh 30s | Round ${round}</p>
-<div><div class="stat"><div class="sv">${totalPosted}</div><div class="sl">Page Posts</div></div><div class="stat"><div class="sv">${totalGroupPosted}</div><div class="sl">Group Posts</div></div><div class="stat"><div class="sv">${totalComments}</div><div class="sl">💬 Comments</div></div><div class="stat"><div class="sv">${postIndex%62+1}/62</div><div class="sl">Post Index</div></div><div class="stat"><div class="sv">R${round}</div><div class="sl">Round</div></div><div class="stat"><div class="sv">${pendingGroupPosts.length}</div><div class="sl">Pending</div></div><div class="stat"><div class="sv">${activeGroups.length}</div><div class="sl">Active Groups</div></div><div class="stat"><div class="sv">${permanentGroups.length}</div><div class="sl">⛔ No Access</div></div><div class="stat"><div class="sv">${isActiveHour()?'🟢':'🌙'}</div><div class="sl">${isActiveHour()?'ACTIVE':'SLEEPING'}</div></div><div class="stat"><div class="sv">${PAGE_TOKEN?'✅':'⚠️'}</div><div class="sl">Page Token</div></div></div>
-<div style="margin:10px 0;padding:10px;background:#0d1a10;border-radius:8px;border:1px solid #1e2e23"><b>Next Post:</b> P${String(nextPost.id).padStart(2,'0')} — ${nextPost.title}<br><b>Next Group:</b> ${nextGroup.name} | <b>Groups used:</b> ${postedGroupsThisCycle.size}/${PET_GROUPS.length}</div>
-<h3>📢 Group Status</h3><div class="box"><table><tr><th>#</th><th>Name</th><th>ID</th><th>✅</th><th>❌</th><th>Status</th></tr>${PET_GROUPS.map((g,i)=>{const s=groupStats[g.id];const isNext=nextGroup&&g.id===nextGroup.id;const used=postedGroupsThisCycle.has(g.id);return`<tr style="${isNext?'background:#0a2a10':used?'color:#4a6652':''}"><td>${i+1}</td><td>${g.name}</td><td style="font-size:10px">${g.id}</td><td class="ok">${s.success}</td><td class="${s.fail>0?'err':'ok'}">${s.fail}</td><td>${s.permanent?'<span style="color:#666">⛔ no access</span>':s.cooldown?'<span style="color:#ff5252">🚫 cooldown</span>':isNext?'<span class="ok">◀ NEXT</span>':used?'<span style="color:#4a6652">✓ used</span>':'<span class="ok">ready</span>'}</td></tr>`;}).join('')}</table></div>
-${pendingGroupPosts.length>0?`<h3>⏳ Pending (${pendingGroupPosts.length})</h3><div class="box warn"><table><tr><th>Title</th><th>Group</th><th>Age</th><th>Comment</th></tr>${pendingGroupPosts.map(p=>{const ageH=(Math.round((Date.now()-p.postedAt)/360000)/10);return`<tr><td>${p.title.substring(0,38)}</td><td>${p.groupName}</td><td class="${ageH>48?'err':'warn-t'}">${ageH}h</td><td>${p.commentFired?'<span style="color:#64b5f6">💬':'<span style="color:#ffb830">⏳'}</span></td></tr>`;}).join('')}</table></div>`:'<div class="box" style="color:#2dff8e">✅ No pending</div>'}
-<h3>📋 Log</h3><div class="log">${logs.map(l=>`<div class="${l.includes('✅')?'ok':l.includes('❌')||l.includes('ERROR')?'err':l.includes('🔄')||l.includes('🔍')?'info':l.includes('⚠️')||l.includes('🚫')?'warn-t':''}"> ${l}</div>`).join('')}</div>
+  const cooldownGroups = PET_GROUPS.filter(g=>groupStats[g.id].cooldown&&!groupStats[g.id].permanent);
+
+  const dashHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>OHG Pet Autopilot v6</title>
+<meta http-equiv="refresh" content="30">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0b1a0f;color:#e2f0e6;min-height:100vh;font-size:13px;}
+.topbar{background:#0d1f13;border-bottom:1px solid #1a3020;padding:14px 20px;display:flex;align-items:center;gap:12px;}
+.logo{width:38px;height:38px;background:#1a9e5c;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.logo-title{font-size:15px;font-weight:600;color:#e2f0e6;}
+.logo-sub{font-size:11px;color:#5a8a6a;margin-top:1px;}
+.live-pill{background:#0f3a1e;border:1px solid #1a9e5c;border-radius:20px;padding:4px 12px;display:flex;align-items:center;gap:6px;margin-left:auto;}
+.dot{width:7px;height:7px;border-radius:50%;background:#1a9e5c;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}
+.live-pill span{font-size:11px;color:#1a9e5c;font-weight:600;}
+.main{padding:16px 20px;max-width:1200px;margin:0 auto;}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.card{background:#0d1f13;border:1px solid #1a3020;border-radius:10px;padding:14px 16px;}
+.label{font-size:10px;color:#5a8a6a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
+.val{font-size:26px;font-weight:600;color:#e2f0e6;line-height:1;}
+.sub{font-size:11px;color:#5a8a6a;margin-top:4px;}
+.val.green{color:#1a9e5c;}
+.val.amber{color:#c8900a;}
+.val.red{color:#e05555;}
+.card-title{font-size:11px;color:#5a8a6a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
+.next-box{background:#0f3a1e;border:1px solid #1a4a26;border-radius:8px;padding:10px 12px;margin-bottom:10px;}
+.next-tag{font-size:9px;color:#1a9e5c;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
+.next-title{font-size:13px;color:#e2f0e6;font-weight:500;line-height:1.4;}
+.next-meta{font-size:11px;color:#5a8a6a;margin-top:4px;}
+.bar-wrap{background:#1a3020;border-radius:3px;height:5px;overflow:hidden;margin-bottom:5px;}
+.bar-fill{height:100%;border-radius:3px;transition:width .4s;}
+.bar-green{background:#1a9e5c;}
+.bar-amber{background:#c8900a;}
+.bar-label{display:flex;justify-content:space-between;font-size:10px;color:#5a8a6a;margin-bottom:10px;}
+.mini3{display:flex;gap:8px;margin-top:8px;}
+.mini-box{flex:1;background:#0f3a1e;border-radius:7px;padding:8px;text-align:center;}
+.mini-val{font-size:17px;font-weight:600;color:#1a9e5c;}
+.mini-lbl{font-size:9px;color:#5a8a6a;margin-top:2px;}
+.g-scroll{max-height:230px;overflow-y:auto;}
+.g-scroll::-webkit-scrollbar{width:3px;}
+.g-scroll::-webkit-scrollbar-thumb{background:#1a3020;border-radius:2px;}
+.g-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #0f1f14;}
+.g-row:last-child{border:none;}
+.g-num{font-size:10px;color:#2a4a32;min-width:22px;}
+.g-name{flex:1;font-size:12px;color:#a0c0a8;}
+.g-id{font-size:9px;color:#2a4a32;font-family:monospace;}
+.badge{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600;white-space:nowrap;}
+.b-ok{background:#0f3a1e;color:#1a9e5c;}
+.b-ban{background:#2a1010;color:#7a3535;}
+.b-cool{background:#2a1f08;color:#8a6018;}
+.b-next{background:#1a4a26;color:#2dff8e;border:1px solid #1a9e5c;}
+.b-used{background:#111f16;color:#3a5a44;}
+.log-wrap{max-height:200px;overflow-y:auto;font-family:monospace;font-size:11px;}
+.log-wrap::-webkit-scrollbar{width:3px;}
+.log-wrap::-webkit-scrollbar-thumb{background:#1a3020;border-radius:2px;}
+.log-line{padding:3px 0;border-bottom:1px solid #0c1810;color:#4a6a52;line-height:1.4;}
+.log-ok{color:#1a9e5c;}
+.log-err{color:#e05555;}
+.log-warn{color:#c8900a;}
+.log-info{color:#4a9ed4;}
+.foot{border-top:1px solid #1a3020;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
+.foot a{color:#1a9e5c;font-size:11px;text-decoration:none;}
+.foot span{font-size:11px;color:#3a5a44;}
+.pending-card{background:#2a1010;border:1px solid #4a2020;border-radius:10px;padding:14px 16px;margin-bottom:12px;}
+.pending-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #3a1818;font-size:12px;}
+.pending-row:last-child{border:none;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">🐾</div>
+  <div>
+    <div class="logo-title">OHG Pet Autopilot <span style="font-size:11px;color:#1a9e5c;background:#0f3a1e;padding:2px 8px;border-radius:4px;margin-left:6px;">v6</span></div>
+    <div class="logo-sub">${est.toLocaleString('en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})} EST &nbsp;·&nbsp; Auto-refresh 30s</div>
+  </div>
+  <div class="live-pill">
+    <div class="dot"></div>
+    <span>${isActiveHour() ? 'Active' : 'Sleeping'}</span>
+  </div>
+</div>
+
+<div class="main">
+
+  <div class="grid4">
+    <div class="card">
+      <div class="label">Page posts</div>
+      <div class="val green">${totalPosted}</div>
+      <div class="sub">Total published</div>
+    </div>
+    <div class="card">
+      <div class="label">Group posts</div>
+      <div class="val">${totalGroupPosted}</div>
+      <div class="sub">Auto-distributed</div>
+    </div>
+    <div class="card">
+      <div class="label">Comments</div>
+      <div class="val">${totalComments}</div>
+      <div class="sub">Viral fallback</div>
+    </div>
+    <div class="card">
+      <div class="label">Pending review</div>
+      <div class="val ${pendingGroupPosts.length > 0 ? 'amber' : 'green'}">${pendingGroupPosts.length}</div>
+      <div class="sub">Awaiting FB approval</div>
+    </div>
+  </div>
+
+  <div class="grid4">
+    <div class="card">
+      <div class="label">Post index</div>
+      <div class="val">${postIndex%62+1}<span style="font-size:14px;color:#5a8a6a;">/62</span></div>
+      <div class="sub">Round ${round}</div>
+    </div>
+    <div class="card">
+      <div class="label">Active groups</div>
+      <div class="val green">${activeGroups.length}</div>
+      <div class="sub">${permanentGroups.length} banned · ${cooldownGroups.length} cooldown</div>
+    </div>
+    <div class="card">
+      <div class="label">Used this cycle</div>
+      <div class="val">${postedGroupsThisCycle.size}</div>
+      <div class="sub">of 51 groups</div>
+    </div>
+    <div class="card">
+      <div class="label">Page token</div>
+      <div class="val" style="font-size:20px;">${PAGE_TOKEN ? '✅' : '⚠️'}</div>
+      <div class="sub">${PAGE_TOKEN ? 'Connected' : 'Missing'}</div>
+    </div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Next scheduled post</div>
+      <div class="next-box">
+        <div class="next-tag">P${String(nextPost.id).padStart(2,'0')} &nbsp;·&nbsp; ${nextPost.cat}</div>
+        <div class="next-title">${nextPost.title}</div>
+        <div class="next-meta">Next group: ${nextGroup.name}</div>
+      </div>
+      <div style="font-size:11px;color:#5a8a6a;">Fires every 60 min · 24/7 active</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Cycle progress</div>
+      <div class="bar-wrap"><div class="bar-fill bar-green" style="width:${Math.round(((postIndex%62+1)/62)*100)}%"></div></div>
+      <div class="bar-label"><span>Posts cycle</span><span>${Math.round(((postIndex%62+1)/62)*100)}%</span></div>
+      <div class="bar-wrap"><div class="bar-fill bar-amber" style="width:${Math.round((postedGroupsThisCycle.size/51)*100)}%"></div></div>
+      <div class="bar-label"><span>Groups used</span><span>${Math.round((postedGroupsThisCycle.size/51)*100)}%</span></div>
+      <div class="mini3">
+        <div class="mini-box"><div class="mini-val">62</div><div class="mini-lbl">Posts</div></div>
+        <div class="mini-box"><div class="mini-val">51</div><div class="mini-lbl">Groups</div></div>
+        <div class="mini-box" style="background:#1a2e10;"><div class="mini-val" style="color:#c8900a;">R${round}</div><div class="mini-lbl">Round</div></div>
+      </div>
+    </div>
+  </div>
+
+  ${pendingGroupPosts.length > 0 ? `
+  <div class="pending-card">
+    <div class="card-title" style="color:#c8900a;margin-bottom:10px;">⏳ Pending admin approval (${pendingGroupPosts.length})</div>
+    ${pendingGroupPosts.map(p=>{
+      const ageH = (Math.round((Date.now()-p.postedAt)/360000)/10);
+      return `<div class="pending-row">
+        <span style="flex:1;color:#c0a080;">${p.title.substring(0,40)}</span>
+        <span style="color:#5a8a6a;">${p.groupName}</span>
+        <span style="color:${ageH>48?'#e05555':'#c8900a'};margin-left:8px;">${ageH}h</span>
+        <span style="margin-left:8px;">${p.commentFired?'<span style="color:#4a9ed4">💬 commented</span>':'<span style="color:#c8900a">⏳ waiting</span>'}</span>
+      </div>`;
+    }).join('')}
+  </div>` : ''}
+
+  <div class="card" style="margin-bottom:12px;">
+    <div class="card-title">Group rotation — ${PET_GROUPS.length} groups
+      <span style="margin-left:auto;font-size:10px;background:#0f3a1e;color:#1a9e5c;padding:2px 8px;border-radius:4px;">${activeGroups.length} ready · ${permanentGroups.length} banned · ${cooldownGroups.length} cooldown</span>
+    </div>
+    <div class="g-scroll">
+      ${PET_GROUPS.map((g,i)=>{
+        const s = groupStats[g.id];
+        const isNext = nextGroup && g.id===nextGroup.id;
+        const used = postedGroupsThisCycle.has(g.id);
+        let badge = '';
+        if(isNext) badge = '<span class="badge b-next">◀ next</span>';
+        else if(s.permanent) badge = '<span class="badge b-ban">⛔ banned</span>';
+        else if(s.cooldown) badge = '<span class="badge b-cool">🚫 cooldown</span>';
+        else if(used) badge = '<span class="badge b-used">✓ used</span>';
+        else badge = '<span class="badge b-ok">ready</span>';
+        const stats = (s.success > 0 || s.fail > 0) ? `<span style="font-size:10px;color:#3a5a44;margin-right:6px;">✅${s.success} ❌${s.fail}</span>` : '';
+        return `<div class="g-row"><span class="g-num">${i+1}</span><span class="g-name">${g.name}</span>${stats}<span class="g-id">${g.id.substring(0,10)}...</span>${badge}</div>`;
+      }).join('')}
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:16px;">
+    <div class="card-title">Deploy logs
+      <span style="margin-left:auto;font-size:10px;color:#3a5a44;">${logs.length} entries</span>
+    </div>
+    <div class="log-wrap">
+      ${logs.slice(0,60).map(l=>{
+        let cls = 'log-line';
+        if(l.includes('✅')||l.includes('SUCCESS')) cls += ' log-ok';
+        else if(l.includes('❌')||l.includes('ERROR')) cls += ' log-err';
+        else if(l.includes('⚠️')||l.includes('🚫')||l.includes('SKIP')) cls += ' log-warn';
+        else if(l.includes('🔄')||l.includes('🔍')||l.includes('📧')||l.includes('💬')) cls += ' log-info';
+        const ts = l.match(/\[([\d\-T:.Z]+)\]/);
+        const msg = ts ? l.replace(ts[0],'').trim() : l;
+        const time = ts ? new Date(ts[1]).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '';
+        return `<div class="${cls}"><span style="color:#2a4a32;margin-right:8px;">${time}</span>${msg}</div>`;
+      }).join('')}
+    </div>
+  </div>
+
+</div>
+
+<div class="foot">
+  <a href="https://onehealthglobe.com" target="_blank">onehealthglobe.com</a>
+  <span>OHG Pet Autopilot v6 · 62 posts · 51 groups · 24/7</span>
+  <a href="/api/stats" target="_blank">API stats →</a>
+</div>
+
 </body></html>`;
-  res.writeHead(200,{'Content-Type':'text/html'}); res.end(html);
+
+  res.writeHead(200,{'Content-Type':'text/html'});
+  res.end(dashHtml);
+
 }).listen(PORT, () => log(`Dashboard on port ${PORT}`));
 
 // ── VIRAL COMMENT FALLBACK ────────────────────────────────────────────────────
@@ -823,7 +920,12 @@ async function findViralPostInGroup(groupId) {
     const data=await apiRequest(options,null);
     if(data.error||!data.data||data.data.length===0) return null;
     let best=null,bestScore=-1;
-    for(const post of data.data){const likes=(post.likes&&post.likes.summary)?post.likes.summary.total_count:0;const comments=(post.comments&&post.comments.summary)?post.comments.summary.total_count:0;const score=likes+comments*3;if(score>bestScore){bestScore=score;best=post;}}
+    for(const post of data.data){
+      const likes=(post.likes&&post.likes.summary)?post.likes.summary.total_count:0;
+      const comments=(post.comments&&post.comments.summary)?post.comments.summary.total_count:0;
+      const score=likes+comments*3;
+      if(score>bestScore){bestScore=score;best=post;}
+    }
     return best;
   } catch(e){log(`Viral search error: ${e.message}`);return null;}
 }
