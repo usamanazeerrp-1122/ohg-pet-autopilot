@@ -69,22 +69,15 @@ const PET_GROUPS = [
   { id:'610787807923198',   name:'Pet Group 51' },
 ];
 
-// Group health tracking: success/fail counts per group
 const groupStats = {};
 PET_GROUPS.forEach(g => { groupStats[g.id] = { success:0, fail:0, lastFail:0, cooldown:false }; });
 
-// Posts pending admin approval: { postId, groupId, groupName, postedAt, title, fullCaption, imageUrl, utm, triedGroups[] }
 let pendingGroupPosts = [];
-// Successfully posted group IDs this cycle (reset each round of 31)
 let postedGroupsThisCycle = new Set();
-
 let groupIndex = 0;
 
 // ── POSTS — 62 REAL OHG URLS + PREMIUM IMAGE PROMPTS ───────────────────────
-// Image prompt rules: photorealistic, premium brand style, magazine quality,
-// warm natural lighting, proper composition, NOT cartoon, NOT illustration
 const POSTS = [
-  // ── DOG HEALTH & DISEASES ──
   {id:1,  title:"5 Silent Dog Diseases That Kill Before Owners Realize",
           cat:"Dog Health",
           url:`${BASE_URL}/top-5-deadly-common-dog-diseases-symptoms-prevention-treatment-pictures/`,
@@ -98,7 +91,7 @@ const POSTS = [
   {id:3,  title:"Is Your Dog's Paw Trying to Tell You Something?",
           cat:"Dog Care",
           url:`${BASE_URL}/dog-paw-scanner/`,
-          imgPrompt:"extreme close-up of a healthy golden retriever paw held gently in human hands on green grass, warm sunlight, soft bokeh background, premium pet lifestyle photography, crystal clear detail",
+          imgPrompt:"extreme close-up of a healthy golden retriever paw held gently in human hands on green grass, warm sunlight, soft bokeh background, premium pet lifestyle photography, crystal clear detail, NO humans faces, dog paw ONLY in focus",
           aff:false},
   {id:4,  title:"Ticks on Your Cat? Here's What You Must Do Right Now",
           cat:"Cat Health",
@@ -120,8 +113,6 @@ const POSTS = [
           url:`${BASE_URL}/animal-safety-protects-human-safety-one-health-guide/`,
           imgPrompt:"aerial-style lifestyle photo of vet, family and healthy dog in green park, golden hour light, hopeful and educational mood, professional magazine composition, photorealistic",
           aff:false},
-
-  // ── PET SAFETY & HOME ──
   {id:8,  title:"Room-by-Room Pet Safety Guide Every Owner Needs",
           cat:"Pet Safety",
           url:`${BASE_URL}/room-by-room-pet-safety-guide-for-families/`,
@@ -162,8 +153,6 @@ const POSTS = [
           url:`${BASE_URL}/pet-safety-hub/`,
           imgPrompt:"confident smiling pet owner sitting with a healthy well-groomed dog and cat together on a clean modern sofa, professional lifestyle photography, warm tones, premium composition",
           aff:false},
-
-  // ── BREED GUIDES ──
   {id:16, title:"Why Beagles Make the Most Loyal Family Dogs",
           cat:"Breed Guide",
           url:`${BASE_URL}/beagle-temperament/`,
@@ -214,8 +203,6 @@ const POSTS = [
           url:`${BASE_URL}/cat-breeds-comparison/`,
           imgPrompt:"four elegant cat breeds sitting together on a clean white studio backdrop — Persian, Siamese, Maine Coon, Ragdoll — professional studio lighting, luxury catalog photography",
           aff:false},
-
-  // ── CAT GUIDES ──
   {id:26, title:"Why Everyone Falls in Love with Persian Cats",
           cat:"Cat Guide",
           url:`${BASE_URL}/persian-cat-temperament/`,
@@ -251,8 +238,6 @@ const POSTS = [
           url:`${BASE_URL}/healthy-cat-bond-for-young-ladies-at-home/`,
           imgPrompt:"young woman lying on a cozy bedroom floor reading with a purring cat on her chest, afternoon golden light through curtains, intimate lifestyle photography, warm and peaceful mood",
           aff:false},
-
-  // ── HEALTH & WELLNESS ──
   {id:33, title:"What's Actually Inside a Pet First Aid Kit?",
           cat:"Pet Health",
           url:`${BASE_URL}/pet-first-aid-kit-checklist/`,
@@ -298,8 +283,6 @@ const POSTS = [
           url:`${BASE_URL}/dog-and-cat-vaccine-tracker-for-pet-owners/`,
           imgPrompt:"close-up of organized colorful pet health records on a desk with a pen and a happy puppy in the background, premium lifestyle and healthcare photography blend",
           aff:false},
-
-  // ── PET CARE RESOURCES ──
   {id:42, title:"The Ultimate Pet Safety Hub — Everything in One Place",
           cat:"Resources",
           url:`${BASE_URL}/useful-checklists-and-care-resources-to-support-everyday-pet-life/`,
@@ -320,8 +303,6 @@ const POSTS = [
           url:`${BASE_URL}/pet-home-safety-guide-for-families-2/`,
           imgPrompt:"architect-style overhead view of a beautiful modern home floor plan with a golden retriever visible in kitchen, premium interior lifestyle photography, editorial quality",
           aff:false},
-
-  // ── AFFILIATE PRODUCTS ──
   {id:46, title:"The LED Nail Clipper That Makes Grooming Stress-Free",
           cat:"Product",
           url:"https://www.dhgate.com/product/led-light-pet-nail-clipper-with-amplification/1010092124.html",
@@ -350,7 +331,7 @@ const POSTS = [
   {id:51, title:"Clean Your Dog's Paws in 10 Seconds — No Water Needed",
           cat:"Product",
           url:"https://www.dhgate.com/product/pet-foot-paw-cleaner-100ml-foam-waterless/1010228089.html",
-          imgPrompt:"dog paw being sprayed with foam cleanser held by careful hands, clean white background, clinical product photography, sharp foam and paw detail, premium and trustworthy",
+          imgPrompt:"dog paw being sprayed with foam cleanser held by careful hands, clean white background, clinical product photography, sharp foam and paw detail, premium and trustworthy, NO human palm, dog paw ONLY",
           aff:true},
   {id:52, title:"Keep Your Dog's Teeth Sparkling With This Simple Tool",
           cat:"Product",
@@ -362,8 +343,6 @@ const POSTS = [
           url:"https://www.dhgate.com/product/pet-shampoo-for-cats-and-dogs-cleansing-bathing/1089431467.html",
           imgPrompt:"golden retriever in a luxury bath tub being washed with premium shampoo, spa-style pet photography, warm steamy bathroom light, fluffy suds, joyful dog expression",
           aff:true},
-
-  // ── SPECIAL TOPICS ──
   {id:54, title:"How a Healthy Bond With Your Cat Improves Your Life",
           cat:"Cat Wellness",
           url:`${BASE_URL}/healthy-cat-bond-for-young-ladies-at-home/`,
@@ -537,28 +516,12 @@ function pickNextGroup(triedIds = []) {
       log(`⟳ Cooldown lifted for ${g.name}`);
     }
   });
-
-  let pick = PET_GROUPS.find(g =>
-    !triedIds.includes(g.id) &&
-    !groupStats[g.id].cooldown &&
-    !groupStats[g.id].permanent &&
-    !postedGroupsThisCycle.has(g.id)
-  );
+  let pick = PET_GROUPS.find(g => !triedIds.includes(g.id) && !groupStats[g.id].cooldown && !groupStats[g.id].permanent && !postedGroupsThisCycle.has(g.id));
   if(pick) return pick;
-
-  pick = PET_GROUPS.find(g =>
-    !triedIds.includes(g.id) &&
-    !groupStats[g.id].cooldown &&
-    !groupStats[g.id].permanent
-  );
+  pick = PET_GROUPS.find(g => !triedIds.includes(g.id) && !groupStats[g.id].cooldown && !groupStats[g.id].permanent);
   if(pick) return pick;
-
-  pick = PET_GROUPS.find(g =>
-    !triedIds.includes(g.id) &&
-    !groupStats[g.id].permanent
-  );
+  pick = PET_GROUPS.find(g => !triedIds.includes(g.id) && !groupStats[g.id].permanent);
   if(pick) return pick;
-
   return null;
 }
 
@@ -567,14 +530,11 @@ async function postToGroupWithRetry(fullCaption, imageUrl, utm, post) {
   const triedIds = [];
   let attempts = 0;
   const maxAttempts = 3;
-
   while(attempts < maxAttempts) {
     const group = pickNextGroup(triedIds);
     if(!group) { log(`⚠️ No more groups available this attempt`); break; }
-
     triedIds.push(group.id);
     attempts++;
-
     try {
       const postId = await publishToGroup(group, fullCaption, utm);
       groupStats[group.id].success++;
@@ -591,11 +551,8 @@ async function postToGroupWithRetry(fullCaption, imageUrl, utm, post) {
       groupStats[group.id].fail++;
       groupStats[group.id].lastFail = Date.now();
       log(`⚠️ GROUP [${attempts}] ${group.name} FAILED: ${e.message.substring(0,80)}`);
-
-      const isPermanent = e.message.includes('missing permissions') ||
-                          e.message.includes('does not exist') ||
-                          e.message.includes('not support this operation') ||
-                          e.message.includes('Invalid OAuth') ||
+      const isPermanent = e.message.includes('missing permissions') || e.message.includes('does not exist') ||
+                          e.message.includes('not support this operation') || e.message.includes('Invalid OAuth') ||
                           e.message.includes('not a member');
       if(isPermanent) {
         groupStats[group.id].cooldown = true;
@@ -616,7 +573,6 @@ async function retryPendingGroupPosts() {
   log(`🔍 Checking ${pendingGroupPosts.length} pending group posts...`);
   const now = Date.now();
   const stillPending = [];
-
   for(const p of pendingGroupPosts) {
     const ageH = (now - p.postedAt) / 3600000;
     try {
@@ -676,7 +632,7 @@ async function runPost() {
       totalPosted++;
       lastPagePostUrl = `https://www.facebook.com/${FB_PAGE_ID}/posts/${pageId.split('_')[1]||pageId}`;
       lastPagePostTitle = post.title;
-      // Send hourly email with next 2 groups to share manually
+      // Send WhatsApp-style email with giant one-tap group share buttons
       sendHourlyGroupEmail(lastPagePostUrl, lastPagePostTitle).catch(e => log('📧 Email err: '+e.message));
     } catch(e) { log(`❌ PAGE failed: ${e.message}`); }
 
@@ -695,10 +651,10 @@ async function runPost() {
   }
 }
 
-// ── EMAIL NOTIFICATION SYSTEM ────────────────────────────────────────────────
+// ── EMAIL SYSTEM ─────────────────────────────────────────────────────────────
 let lastPagePostUrl = '';
 let lastPagePostTitle = '';
-let groupEmailIndex = 0; // tracks which 2 groups to send next
+let groupEmailIndex = 0;
 
 function sendEmail(subject, htmlBody) {
   return new Promise((resolve) => {
@@ -726,7 +682,7 @@ function sendEmail(subject, htmlBody) {
         res.on('data', chunk => data += chunk);
         res.on('end', () => {
           if(res.statusCode === 200 || res.statusCode === 201) {
-            log('Email sent OK via Resend: ' + subject);
+            log('✅ Email sent OK: ' + subject);
             resolve(true);
           } else {
             log('Email Resend error ' + res.statusCode + ': ' + data.substring(0,80));
@@ -740,80 +696,180 @@ function sendEmail(subject, htmlBody) {
     } catch(e) { log('Email exception: ' + e.message); resolve(false); }
   });
 }
-function buildHourlyEmail(postUrl, postTitle, group1, group2, emailNum, totalGroups) {
+
+// ── NEW: WHATSAPP-STYLE EMAIL WITH GIANT ONE-TAP SHARE BUTTONS ───────────────
+function buildHourlyEmail(postUrl, postTitle, group1, group2, groupNum1, groupNum2, totalGroups) {
   const now = new Date().toLocaleString('en-US', {timeZone:'America/New_York', hour:'numeric', minute:'2-digit', hour12:true});
-  const shareUrl1 = `https://www.facebook.com/groups/${group1.id}`;
-  const shareUrl2 = `https://www.facebook.com/groups/${group2.id}`;
+  const dateStr = new Date().toLocaleDateString('en-US', {timeZone:'America/New_York', weekday:'short', month:'short', day:'numeric'});
 
-  return `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:16px;background:#f0f2f5">
+  // Direct Facebook group discussion tab — opens group, user taps Share
+  const groupUrl1 = `https://www.facebook.com/groups/${group1.id}?tab=discussion`;
+  const groupUrl2 = `https://www.facebook.com/groups/${group2.id}?tab=discussion`;
 
-<div style="background:#0a0f0d;color:#2dff8e;padding:20px;border-radius:12px;text-align:center;margin-bottom:16px">
-  <h1 style="margin:0;font-size:22px">🐾 OHG Pet Autopilot</h1>
-  <p style="margin:6px 0 0;color:#7a9e85;font-size:13px">Hourly Share Reminder • ${now} EST</p>
-</div>
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>OHG Share Reminder</title>
+</head>
+<body style="margin:0;padding:0;background:#ECE5DD;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,sans-serif;min-height:100vh;">
+<div style="max-width:500px;margin:0 auto;background:#ECE5DD;min-height:100vh;">
 
-<div style="background:#d4edda;border:1px solid #c3e6cb;border-radius:10px;padding:18px;margin-bottom:16px;text-align:center">
-  <p style="margin:0 0 6px;color:#155724;font-size:13px;font-weight:bold">📢 POST TO SHARE</p>
-  <p style="margin:0 0 14px;color:#155724;font-size:15px"><strong>${postTitle}</strong></p>
-  <a href="${postUrl}" style="background:#1877f2;color:white;padding:11px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;display:inline-block">👁 View Page Post</a>
-</div>
-
-<div style="background:white;border-radius:10px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.1)">
-  <p style="margin:0 0 16px;color:#333;font-size:15px;font-weight:bold;text-align:center">📤 Share to 2 Groups Now (takes 60 seconds)</p>
-
-  <div style="background:#f8f9fa;border-radius:8px;padding:16px;margin-bottom:12px;text-align:center">
-    <p style="margin:0 0 4px;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:1px">Group ${emailNum * 2 - 1} of ${totalGroups}</p>
-    <p style="margin:0 0 12px;color:#333;font-size:16px;font-weight:bold">${group1.name}</p>
-    <a href="${shareUrl1}" style="background:#42b72a;color:white;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;display:inline-block">✅ Open Group 1 →</a>
+  <!-- HEADER: WhatsApp chat bar style -->
+  <div style="background:#075E54;padding:12px 16px;display:flex;align-items:center;gap:10px;">
+    <div style="width:40px;height:40px;border-radius:50%;background:#128C7E;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🐾</div>
+    <div style="flex:1;">
+      <div style="color:#FFFFFF;font-size:16px;font-weight:700;line-height:1.2;">OHG Pet Autopilot</div>
+      <div style="color:#B2DFDB;font-size:12px;margin-top:1px;">Hourly Share Reminder &bull; ${now} EST</div>
+    </div>
+    <div style="background:#25D366;border-radius:20px;padding:3px 10px;flex-shrink:0;">
+      <span style="color:#fff;font-size:10px;font-weight:800;letter-spacing:1px;">LIVE</span>
+    </div>
   </div>
 
-  <div style="background:#f8f9fa;border-radius:8px;padding:16px;text-align:center">
-    <p style="margin:0 0 4px;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:1px">Group ${emailNum * 2} of ${totalGroups}</p>
-    <p style="margin:0 0 12px;color:#333;font-size:16px;font-weight:bold">${group2.name}</p>
-    <a href="${shareUrl2}" style="background:#42b72a;color:white;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;display:inline-block">✅ Open Group 2 →</a>
+  <!-- CHAT BODY -->
+  <div style="padding:14px 12px;">
+
+    <!-- Date chip -->
+    <div style="text-align:center;margin-bottom:14px;">
+      <span style="background:rgba(255,255,255,0.8);color:#667781;font-size:11px;padding:3px 12px;border-radius:8px;display:inline-block;">${dateStr}</span>
+    </div>
+
+    <!-- POST TO SHARE bubble -->
+    <div style="display:flex;gap:8px;margin-bottom:10px;align-items:flex-end;">
+      <div style="width:26px;height:26px;border-radius:50%;background:#128C7E;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-bottom:2px;">🤖</div>
+      <div style="background:#FFFFFF;border-radius:2px 14px 14px 14px;padding:11px 14px;max-width:87%;box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+        <div style="color:#128C7E;font-size:10px;font-weight:800;letter-spacing:0.8px;margin-bottom:5px;text-transform:uppercase;">📌 Post to Share</div>
+        <div style="color:#111111;font-size:15px;font-weight:700;line-height:1.4;margin-bottom:10px;">${postTitle}</div>
+        <a href="${postUrl}" style="display:block;background:#E8F5E9;border-left:3px solid #25D366;padding:8px 10px;border-radius:0 6px 6px 0;text-decoration:none;color:#075E54;font-size:13px;font-weight:600;">👁 View Page Post →</a>
+        <div style="color:#8696A0;font-size:10px;text-align:right;margin-top:5px;">${now} ✓✓</div>
+      </div>
+    </div>
+
+    <!-- Instruction chip -->
+    <div style="text-align:center;margin:16px 0 14px;">
+      <span style="background:rgba(255,255,255,0.8);color:#667781;font-size:11px;padding:4px 14px;border-radius:8px;display:inline-block;">⚡ 2 taps to share — takes 2 minutes</span>
+    </div>
+
+    <!-- ═══════════ GROUP 1 BUBBLE ═══════════ -->
+    <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-end;">
+      <div style="width:26px;height:26px;border-radius:50%;background:#128C7E;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-bottom:2px;">🤖</div>
+      <div style="background:#FFFFFF;border-radius:2px 14px 14px 14px;padding:14px;max-width:87%;box-shadow:0 1px 3px rgba(0,0,0,0.12);width:100%;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="color:#128C7E;font-size:10px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase;">STEP 1 — GROUP 1</span>
+          <span style="background:#E8F5E9;color:#075E54;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">${groupNum1} of ${totalGroups}</span>
+        </div>
+        <div style="color:#111111;font-size:16px;font-weight:700;margin-bottom:14px;">📍 ${group1.name}</div>
+        <!-- BIG TAP BUTTON -->
+        <a href="${groupUrl1}" style="display:block;background:#25D366;color:#FFFFFF;text-decoration:none;text-align:center;padding:18px 16px;border-radius:14px;font-size:20px;font-weight:900;letter-spacing:0.2px;box-shadow:0 4px 12px rgba(37,211,102,0.5);">
+          ✅ &nbsp;TAP TO OPEN GROUP 1
+          <div style="font-size:12px;font-weight:500;opacity:0.9;margin-top:4px;">opens Facebook → tap Share in group</div>
+        </a>
+        <div style="color:#8696A0;font-size:10px;text-align:right;margin-top:8px;">${now} ✓✓</div>
+      </div>
+    </div>
+
+    <!-- Wait bubble -->
+    <div style="display:flex;gap:8px;margin-bottom:8px;padding-left:34px;align-items:flex-end;">
+      <div style="background:#FFFFFF;border-radius:2px 14px 14px 14px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+        <div style="color:#555;font-size:13px;line-height:1.5;">⏱ After sharing Group 1 — wait <strong style="color:#111;">1 minute</strong> then tap Group 2</div>
+        <div style="color:#8696A0;font-size:10px;text-align:right;margin-top:4px;">${now} ✓✓</div>
+      </div>
+    </div>
+
+    <!-- ═══════════ GROUP 2 BUBBLE ═══════════ -->
+    <div style="display:flex;gap:8px;margin-bottom:8px;align-items:flex-end;">
+      <div style="width:26px;height:26px;border-radius:50%;background:#128C7E;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;margin-bottom:2px;">🤖</div>
+      <div style="background:#FFFFFF;border-radius:2px 14px 14px 14px;padding:14px;max-width:87%;box-shadow:0 1px 3px rgba(0,0,0,0.12);width:100%;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="color:#128C7E;font-size:10px;font-weight:800;letter-spacing:0.8px;text-transform:uppercase;">STEP 2 — GROUP 2</span>
+          <span style="background:#E8F5E9;color:#075E54;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;">${groupNum2} of ${totalGroups}</span>
+        </div>
+        <div style="color:#111111;font-size:16px;font-weight:700;margin-bottom:14px;">📍 ${group2.name}</div>
+        <!-- BIG TAP BUTTON -->
+        <a href="${groupUrl2}" style="display:block;background:#25D366;color:#FFFFFF;text-decoration:none;text-align:center;padding:18px 16px;border-radius:14px;font-size:20px;font-weight:900;letter-spacing:0.2px;box-shadow:0 4px 12px rgba(37,211,102,0.5);">
+          ✅ &nbsp;TAP TO OPEN GROUP 2
+          <div style="font-size:12px;font-weight:500;opacity:0.9;margin-top:4px;">opens Facebook → tap Share in group</div>
+        </a>
+        <div style="color:#8696A0;font-size:10px;text-align:right;margin-top:8px;">${now} ✓✓</div>
+      </div>
+    </div>
+
+    <!-- Done bubble -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;padding-left:34px;">
+      <div style="background:#FFFFFF;border-radius:2px 14px 14px 14px;padding:10px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.12);">
+        <div style="color:#555;font-size:12px;line-height:1.6;">
+          🎉 Both groups shared! Great job.<br>
+          <span style="color:#25D366;font-weight:700;">Next post arrives in ~60 minutes.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATS BAR -->
+    <div style="background:rgba(255,255,255,0.75);border-radius:14px;padding:12px 8px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-around;align-items:center;">
+        <div style="text-align:center;">
+          <div style="color:#111;font-size:18px;font-weight:900;line-height:1;">62</div>
+          <div style="color:#8696A0;font-size:9px;margin-top:2px;">Posts</div>
+        </div>
+        <div style="width:1px;height:28px;background:#DDD;"></div>
+        <div style="text-align:center;">
+          <div style="color:#111;font-size:18px;font-weight:900;line-height:1;">51</div>
+          <div style="color:#8696A0;font-size:9px;margin-top:2px;">Groups</div>
+        </div>
+        <div style="width:1px;height:28px;background:#DDD;"></div>
+        <div style="text-align:center;">
+          <div style="color:#25D366;font-size:18px;font-weight:900;line-height:1;">24/7</div>
+          <div style="color:#8696A0;font-size:9px;margin-top:2px;">Autopilot</div>
+        </div>
+        <div style="width:1px;height:28px;background:#DDD;"></div>
+        <div style="text-align:center;">
+          <div style="color:#111;font-size:18px;font-weight:900;line-height:1;">${groupNum1}</div>
+          <div style="color:#8696A0;font-size:9px;margin-top:2px;">This Round</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="text-align:center;padding:8px 0 16px;">
+      <a href="https://ohg-pet-autopilot-production.up.railway.app" style="color:#128C7E;font-size:11px;text-decoration:none;">📊 Live Dashboard</a>
+      <span style="color:#CCC;font-size:11px;"> &bull; </span>
+      <span style="color:#8696A0;font-size:11px;">onehealthglobe.com</span>
+    </div>
+
   </div>
 </div>
-
-<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:14px;margin-bottom:16px">
-  <strong>💡 How to share in 3 taps:</strong><br>
-  1️⃣ Click a group button above<br>
-  2️⃣ Find the pinned post or go to your Page post<br>
-  3️⃣ Tap <strong>Share → Share to Group</strong> → Done!
-</div>
-
-<div style="background:white;border-radius:8px;padding:12px;font-size:11px;color:#888;text-align:center">
-  Email ${emailNum} of ${totalGroups/2} today &nbsp;|&nbsp; Next email in ~1 hour<br>
-  <a href="https://ohg-pet-autopilot-production.up.railway.app" style="color:#1877f2">Live Dashboard</a> • onehealthglobe.com
-</div>
-</body></html>`;
+</body>
+</html>`;
 }
 
-// Called right after each successful page post — sends hourly email with next 2 groups
+// ── SEND HOURLY GROUP EMAIL ───────────────────────────────────────────────────
 async function sendHourlyGroupEmail(postUrl, postTitle) {
   const activeGroups = PET_GROUPS.filter(g => !groupStats[g.id].permanent);
   if(activeGroups.length < 2) { log('📧 Not enough active groups for email'); return; }
 
-  // Pick next 2 groups in rotation
   const idx1 = groupEmailIndex % activeGroups.length;
   const idx2 = (groupEmailIndex + 1) % activeGroups.length;
   const group1 = activeGroups[idx1];
   const group2 = activeGroups[idx2];
-  const emailNum = Math.floor(groupEmailIndex / 2) + 1;
-  const totalGroups = Math.min(activeGroups.length, 20); // cap display at 20
+  const groupNum1 = groupEmailIndex + 1;
+  const groupNum2 = groupEmailIndex + 2;
+  const totalGroups = activeGroups.length;
 
   groupEmailIndex = (groupEmailIndex + 2) % activeGroups.length;
 
-  const subject = `🐾 Share Now: ${group1.name} + ${group2.name} — "${postTitle.substring(0,35)}"`;
-  const html = buildHourlyEmail(postUrl, postTitle, group1, group2, emailNum, totalGroups);
+  const subject = `🐾 Share Now: ${group1.name} + ${group2.name} — "${postTitle.substring(0,40)}"`;
+  const html = buildHourlyEmail(postUrl, postTitle, group1, group2, groupNum1, groupNum2, totalGroups);
   await sendEmail(subject, html);
-  log(`📧 Hourly email sent for ${group1.name} + ${group2.name}`);
+  log(`📧 WhatsApp-style email sent → ${group1.name} + ${group2.name}`);
 }
 
 // STARTUP
 log('OHG Pet Autopilot Server v5 starting...');
 log(`Posts: 62 | Groups: ${PET_GROUPS.length} | Interval: ${INTERVAL_MS/60000}min | Hours: ${ACTIVE_FROM}-${ACTIVE_TO} EST`);
 log(`Token: ${FB_SYS_TOKEN?'SET len='+FB_SYS_TOKEN.length:'MISSING'} | Claude: ${CLAUDE_KEY?'SET':'MISSING'}`);
-log(`Group token: ${GROUP_TOKEN && GROUP_TOKEN!==FB_SYS_TOKEN?'SEPARATE (len='+GROUP_TOKEN.length+')':'using FB_TOKEN (no publish_to_groups yet)'}`);
+log(`Group token: ${GROUP_TOKEN && GROUP_TOKEN!==FB_SYS_TOKEN?'SEPARATE (len='+GROUP_TOKEN.length+')':'using FB_TOKEN'}`);
 log(`Email: ${process.env.RESEND_KEY?'✅ Resend configured → '+NOTIFY_EMAIL:'⚠️ RESEND_KEY not set'}`);
 
 fetchPageToken().then(() => {
