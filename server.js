@@ -702,54 +702,44 @@ let groupEmailIndex = 0; // tracks which 2 groups to send next
 
 function sendEmail(subject, htmlBody) {
   return new Promise((resolve) => {
-    if(!GMAIL_PASS) { log('Email skipped - GMAIL_PASS not set'); resolve(false); return; }
-    const net = require('net');
-    const tls = require('tls');
-    const authPlain = Buffer.from('\0' + GMAIL_USER + '\0' + GMAIL_PASS).toString('base64');
-    const msg = [
-      'From: OHG Autopilot <' + GMAIL_USER + '>',
-      'To: ' + NOTIFY_EMAIL,
-      'Subject: ' + subject,
-      'MIME-Version: 1.0',
-      'Content-Type: text/html; charset=utf-8',
-      '',
-      htmlBody
-    ].join('\r\n');
-    const tlsCmds = [
-      'EHLO railway\r\n',
-      'AUTH PLAIN ' + authPlain + '\r\n',
-      'MAIL FROM:<' + GMAIL_USER + '>\r\n',
-      'RCPT TO:<' + NOTIFY_EMAIL + '>\r\n',
-      'DATA\r\n',
-      msg + '\r\n.\r\n',
-      'QUIT\r\n'
-    ];
-    let tlsStep = 0;
-    let plainStep = 0;
-    const sock = net.connect(587, 'smtp.gmail.com');
-    sock.setTimeout(20000, () => { log('Email timeout'); sock.destroy(); resolve(false); });
-    sock.on('error', e => { log('Email socket error: ' + e.message); resolve(false); });
-    sock.on('data', d => {
-      const r = d.toString();
-      if(plainStep === 0 && r.includes('220')) { sock.write('EHLO railway\r\n'); plainStep++; return; }
-      if(plainStep === 1 && r.includes('250')) { sock.write('STARTTLS\r\n'); plainStep++; return; }
-      if(plainStep === 2 && r.includes('220')) {
-        const tlsSock = tls.connect({socket: sock, rejectUnauthorized: false}, () => {
-          tlsSock.write(tlsCmds[tlsStep++]);
-          tlsSock.on('data', td => {
-            const tr = td.toString();
-            if(tr.includes('221')) { tlsSock.destroy(); log('Email sent OK: ' + subject); resolve(true); return; }
-            if(tr.match(/^(220|250|235|354)/m) && tlsStep < tlsCmds.length) { tlsSock.write(tlsCmds[tlsStep++]); }
-            else if(tr.match(/^5\d\d/m)) { log('Email TLS error: ' + tr.substring(0,60)); tlsSock.destroy(); resolve(false); }
-          });
-          tlsSock.on('error', e => { log('Email TLS err: ' + e.message); resolve(false); });
+    const resendKey = (process.env.RESEND_KEY || '').trim();
+    if(!resendKey) { log('Email skipped - RESEND_KEY not set'); resolve(false); return; }
+    try {
+      const body = JSON.stringify({
+        from: 'OHG Autopilot <onboarding@resend.dev>',
+        to: [NOTIFY_EMAIL],
+        subject: subject,
+        html: htmlBody
+      });
+      const options = {
+        hostname: 'api.resend.com',
+        path: '/emails',
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + resendKey,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(body)
+        }
+      };
+      const req = https.request(options, res => {
+        let data = '';
+        res.on('data', chunk => data += chunk);
+        res.on('end', () => {
+          if(res.statusCode === 200 || res.statusCode === 201) {
+            log('Email sent OK via Resend: ' + subject);
+            resolve(true);
+          } else {
+            log('Email Resend error ' + res.statusCode + ': ' + data.substring(0,80));
+            resolve(false);
+          }
         });
-        plainStep++;
-      }
-    });
+      });
+      req.on('error', e => { log('Email request error: ' + e.message); resolve(false); });
+      req.write(body);
+      req.end();
+    } catch(e) { log('Email exception: ' + e.message); resolve(false); }
   });
 }
-
 function buildHourlyEmail(postUrl, postTitle, group1, group2, emailNum, totalGroups) {
   const now = new Date().toLocaleString('en-US', {timeZone:'America/New_York', hour:'numeric', minute:'2-digit', hour12:true});
   const shareUrl1 = `https://www.facebook.com/groups/${group1.id}`;
@@ -824,7 +814,7 @@ log('OHG Pet Autopilot Server v5 starting...');
 log(`Posts: 62 | Groups: ${PET_GROUPS.length} | Interval: ${INTERVAL_MS/60000}min | Hours: ${ACTIVE_FROM}-${ACTIVE_TO} EST`);
 log(`Token: ${FB_SYS_TOKEN?'SET len='+FB_SYS_TOKEN.length:'MISSING'} | Claude: ${CLAUDE_KEY?'SET':'MISSING'}`);
 log(`Group token: ${GROUP_TOKEN && GROUP_TOKEN!==FB_SYS_TOKEN?'SEPARATE (len='+GROUP_TOKEN.length+')':'using FB_TOKEN (no publish_to_groups yet)'}`);
-log(`Email: ${GMAIL_PASS?'✅ configured → '+NOTIFY_EMAIL:'⚠️ GMAIL_PASS not set'}`);
+log(`Email: ${process.env.RESEND_KEY?'✅ Resend configured → '+NOTIFY_EMAIL:'⚠️ RESEND_KEY not set'}`);
 
 fetchPageToken().then(() => {
   log(`Scheduler ready — first post in 15s`);
