@@ -702,41 +702,51 @@ let groupEmailIndex = 0; // tracks which 2 groups to send next
 
 function sendEmail(subject, htmlBody) {
   return new Promise((resolve) => {
-    if(!GMAIL_PASS) { log('⚠️ Email skipped — GMAIL_PASS not set'); resolve(false); return; }
+    if(!GMAIL_PASS) { log('Email skipped - GMAIL_PASS not set'); resolve(false); return; }
+    const net = require('net');
     const tls = require('tls');
-    const authPlain = Buffer.from(`\0${GMAIL_USER}\0${GMAIL_PASS}`).toString('base64');
+    const authPlain = Buffer.from('\0' + GMAIL_USER + '\0' + GMAIL_PASS).toString('base64');
     const msg = [
-      `From: OHG Autopilot <${GMAIL_USER}>`,
-      `To: ${NOTIFY_EMAIL}`,
-      `Subject: ${subject}`,
+      'From: OHG Autopilot <' + GMAIL_USER + '>',
+      'To: ' + NOTIFY_EMAIL,
+      'Subject: ' + subject,
       'MIME-Version: 1.0',
       'Content-Type: text/html; charset=utf-8',
       '',
       htmlBody
     ].join('\r\n');
-    let step = 0;
-    const cmds = [
-      `EHLO railway\r\n`,
-      `AUTH PLAIN ${authPlain}\r\n`,
-      `MAIL FROM:<${GMAIL_USER}>\r\n`,
-      `RCPT TO:<${NOTIFY_EMAIL}>\r\n`,
-      `DATA\r\n`,
+    const tlsCmds = [
+      'EHLO railway\r\n',
+      'AUTH PLAIN ' + authPlain + '\r\n',
+      'MAIL FROM:<' + GMAIL_USER + '>\r\n',
+      'RCPT TO:<' + NOTIFY_EMAIL + '>\r\n',
+      'DATA\r\n',
       msg + '\r\n.\r\n',
-      `QUIT\r\n`
+      'QUIT\r\n'
     ];
-    const sock = tls.connect(465, 'smtp.gmail.com', {rejectUnauthorized:false}, () => {});
+    let tlsStep = 0;
+    let plainStep = 0;
+    const sock = net.connect(587, 'smtp.gmail.com');
+    sock.setTimeout(20000, () => { log('Email timeout'); sock.destroy(); resolve(false); });
+    sock.on('error', e => { log('Email socket error: ' + e.message); resolve(false); });
     sock.on('data', d => {
       const r = d.toString();
-      if(r.match(/^(220|250|235|354|221)/m)) {
-        if(r.includes('221')) { sock.destroy(); log('📧 Email sent OK: ' + subject); resolve(true); return; }
-        if(step < cmds.length) sock.write(cmds[step++]);
-      } else if(r.match(/^5\d\d/m)) {
-        log('📧 Email error: ' + r.substring(0,80));
-        sock.destroy(); resolve(false);
+      if(plainStep === 0 && r.includes('220')) { sock.write('EHLO railway\r\n'); plainStep++; return; }
+      if(plainStep === 1 && r.includes('250')) { sock.write('STARTTLS\r\n'); plainStep++; return; }
+      if(plainStep === 2 && r.includes('220')) {
+        const tlsSock = tls.connect({socket: sock, rejectUnauthorized: false}, () => {
+          tlsSock.write(tlsCmds[tlsStep++]);
+          tlsSock.on('data', td => {
+            const tr = td.toString();
+            if(tr.includes('221')) { tlsSock.destroy(); log('Email sent OK: ' + subject); resolve(true); return; }
+            if(tr.match(/^(220|250|235|354)/m) && tlsStep < tlsCmds.length) { tlsSock.write(tlsCmds[tlsStep++]); }
+            else if(tr.match(/^5\d\d/m)) { log('Email TLS error: ' + tr.substring(0,60)); tlsSock.destroy(); resolve(false); }
+          });
+          tlsSock.on('error', e => { log('Email TLS err: ' + e.message); resolve(false); });
+        });
+        plainStep++;
       }
     });
-    sock.on('error', e => { log('📧 SMTP error: ' + e.message); resolve(false); });
-    sock.on('connect', () => sock.write(cmds[step++]));
   });
 }
 
