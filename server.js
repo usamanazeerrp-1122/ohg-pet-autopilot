@@ -4,45 +4,66 @@ const http = require('http');
 const FB_SYS_TOKEN = (process.env.FB_TOKEN || '').trim().replace(/['"]/g,'');
 const FB_PAGE_ID   = (process.env.FB_PAGE_ID || '1593329474221951').trim().replace(/['"]/g,'');
 const CLAUDE_KEY   = (process.env.CLAUDE_KEY || '').trim().replace(/['"]/g,'');
-// Separate token for group posting — needs publish_to_groups permission
-// Get from: developers.facebook.com/tools/explorer → check publish_to_groups + groups_access_member_info
-// Add to Railway as GROUP_TOKEN variable. Falls back to FB_TOKEN if not set.
 const GROUP_TOKEN  = (process.env.GROUP_TOKEN || process.env.FB_TOKEN || '').trim().replace(/['"]/g,'');
 const BASE_URL     = (process.env.BASE_URL || 'https://onehealthglobe.com').trim().replace(/['"]/g,'');
 const UTM_CAMP     = (process.env.UTM_CAMP || 'pet_daily').trim().replace(/['"]/g,'');
 const INTERVAL_MS  = parseInt((process.env.INTERVAL_MS || '3600000').replace(/['"]/g,''));
-const ACTIVE_FROM  = parseInt((process.env.ACTIVE_FROM || '8').replace(/['"]/g,''));
-const ACTIVE_TO    = parseInt((process.env.ACTIVE_TO || '22').replace(/['"]/g,''));
+const ACTIVE_FROM  = parseInt((process.env.ACTIVE_FROM || '0').replace(/['"]/g,''));
+const ACTIVE_TO    = parseInt((process.env.ACTIVE_TO || '23').replace(/['"]/g,''));
 
-// ── 27 REAL PET GROUPS ──────────────────────────────────────────────────────
+// ── 51 REAL PET GROUPS (verified member) ────────────────────────────────────
 const PET_GROUPS = [
-  { id:'802822919805380',  name:'Pet Group 1'  },
-  { id:'461184931334541',  name:'Pet Group 2'  },
-  { id:'323857581833990',  name:'Pet Group 3'  },
-  { id:'1570382673181645', name:'Pet Group 4'  },
-  { id:'157779997926682',  name:'Pet Group 5'  },
-  { id:'692556975452740',  name:'Pet Group 6'  },
-  { id:'275888039988666',  name:'Pet Group 7'  },
-  { id:'1674732609491439', name:'Pet Group 8'  },
-  { id:'326167946033084',  name:'Pet Group 9'  },
-  { id:'307580381503430',  name:'Pet Group 10' },
-  { id:'377755187101689',  name:'Pet Group 11' },
-  { id:'767967703592088',  name:'Pet Group 12' },
-  { id:'192587185534663',  name:'Pet Group 13' },
-  { id:'1574984739470886', name:'Pet Group 14' },
-  { id:'1902485846659530', name:'Pet Group 15' },
-  { id:'3414655255474076', name:'Pet Group 16' },
-  { id:'843759473195914',  name:'Pet Group 17' },
-  { id:'751335350312342',  name:'Pet Group 18' },
-  { id:'300444308417613',  name:'Pet Group 19' },
-  { id:'167691761969622',  name:'Pet Group 20' },
-  { id:'238832622186881',  name:'Pet Group 21' },
-  { id:'472184296323013',  name:'Pet Group 22' },
-  { id:'392763732589943',  name:'Pet Group 23' },
-  { id:'500368749468100',  name:'Pet Group 24' },
-  { id:'933217017720614',  name:'Pet Group 25' },
-  { id:'675797020593657',  name:'Pet Group 26' },
-  { id:'299233075248982',  name:'Pet Group 27' },
+  { id:'500368749468100',   name:'Pet Group 1'  },
+  { id:'3600051136946931',  name:'Pet Group 2'  },
+  { id:'292334551733098',   name:'Pet Group 3'  },
+  { id:'1646335478949432',  name:'Pet Group 4'  },
+  { id:'2554385438000835',  name:'Pet Group 5'  },
+  { id:'789150111541632',   name:'Pet Group 6'  },
+  { id:'7744997858907035',  name:'Pet Group 7'  },
+  { id:'1353490842230101',  name:'Pet Group 8'  },
+  { id:'1834108936746147',  name:'Pet Group 9'  },
+  { id:'330254270730994',   name:'Pet Group 10' },
+  { id:'1248873522784379',  name:'Pet Group 11' },
+  { id:'1014385262861627',  name:'Pet Group 12' },
+  { id:'675797020593657',   name:'Pet Group 13' },
+  { id:'583620043376368',   name:'Pet Group 14' },
+  { id:'2547506902152954',  name:'Pet Group 15' },
+  { id:'3140451742656289',  name:'Pet Group 16' },
+  { id:'1480786079452455',  name:'Pet Group 17' },
+  { id:'1326944118206638',  name:'Pet Group 18' },
+  { id:'307580381503430',   name:'Pet Group 19' },
+  { id:'461184931334541',   name:'Pet Group 20' },
+  { id:'1295942594553524',  name:'Pet Group 21' },
+  { id:'192587185534663',   name:'Pet Group 22' },
+  { id:'377755187101689',   name:'Pet Group 23' },
+  { id:'326167946033084',   name:'Pet Group 24' },
+  { id:'610566119052717',   name:'Pet Group 25' },
+  { id:'1674732609491439',  name:'Pet Group 26' },
+  { id:'933217017720614',   name:'Pet Group 27' },
+  { id:'431295184113190',   name:'Pet Group 28' },
+  { id:'767624587087131',   name:'Pet Group 29' },
+  { id:'594418657651256',   name:'Pet Group 30' },
+  { id:'270108283813237',   name:'Pet Group 31' },
+  { id:'301989663212504',   name:'Pet Group 32' },
+  { id:'1849264732136206',  name:'Pet Group 33' },
+  { id:'227331692369249',   name:'Pet Group 34' },
+  { id:'789914661870430',   name:'Pet Group 35' },
+  { id:'298318892925167',   name:'Pet Group 36' },
+  { id:'832559748915714',   name:'Pet Group 37' },
+  { id:'364649314053230',   name:'Pet Group 38' },
+  { id:'1194573492507061',  name:'Pet Group 39' },
+  { id:'915924780333480',   name:'Pet Group 40' },
+  { id:'657070631294038',   name:'Pet Group 41' },
+  { id:'804913806896277',   name:'Pet Group 42' },
+  { id:'2312541602348749',  name:'Pet Group 43' },
+  { id:'3487960294831161',  name:'Pet Group 44' },
+  { id:'164790994147723',   name:'Pet Group 45' },
+  { id:'633599764751170',   name:'Pet Group 46' },
+  { id:'2506890209',        name:'Pet Group 47' },
+  { id:'1331075681160221',  name:'Pet Group 48' },
+  { id:'1097715307889750',  name:'Pet Group 49' },
+  { id:'411960037377198',   name:'Pet Group 50' },
+  { id:'610787807923198',   name:'Pet Group 51' },
 ];
 
 // Group health tracking: success/fail counts per group
@@ -187,7 +208,6 @@ async function publishToPage(fullCaption, imageUrl, utm) {
     headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body)} };
   const data = await apiRequest(options, body);
   if(data.error) {
-    // fallback to link post
     const b2 = JSON.stringify({ message:fullCaption, link:utm, access_token:PAGE_TOKEN });
     const o2 = { hostname:'graph.facebook.com', path:`/v19.0/${FB_PAGE_ID}/feed`, method:'POST',
       headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(b2)} };
@@ -209,11 +229,8 @@ async function publishToGroup(group, fullCaption, utm) {
 }
 
 // ── SMART GROUP SELECTOR ─────────────────────────────────────────────────────
-// Picks next group that: not on cooldown, not already used this cycle
-// Falls back to any non-cooldown group, then any group if all on cooldown
 function pickNextGroup(triedIds = []) {
   const now = Date.now();
-  // Reset cooldown after 24h
   PET_GROUPS.forEach(g => {
     const s = groupStats[g.id];
     if(s.cooldown && (now - s.lastFail) > 24*3600000) {
@@ -222,7 +239,6 @@ function pickNextGroup(triedIds = []) {
     }
   });
 
-  // Priority 1: not tried, not on cooldown, not used this cycle
   let pick = PET_GROUPS.find(g =>
     !triedIds.includes(g.id) &&
     !groupStats[g.id].cooldown &&
@@ -231,7 +247,6 @@ function pickNextGroup(triedIds = []) {
   );
   if(pick) return pick;
 
-  // Priority 2: not tried, not on cooldown (may repeat this cycle)
   pick = PET_GROUPS.find(g =>
     !triedIds.includes(g.id) &&
     !groupStats[g.id].cooldown &&
@@ -239,18 +254,16 @@ function pickNextGroup(triedIds = []) {
   );
   if(pick) return pick;
 
-  // Priority 3: not tried, temporary cooldown only (skip permanent bans always)
   pick = PET_GROUPS.find(g =>
     !triedIds.includes(g.id) &&
     !groupStats[g.id].permanent
   );
   if(pick) return pick;
 
-  return null; // all groups tried
+  return null;
 }
 
 // ── POST TO GROUPS WITH SMART RETRY ─────────────────────────────────────────
-// Tries up to 3 groups per hour slot until one succeeds
 async function postToGroupWithRetry(fullCaption, imageUrl, utm, post) {
   const triedIds = [];
   let attempts = 0;
@@ -269,20 +282,17 @@ async function postToGroupWithRetry(fullCaption, imageUrl, utm, post) {
       postedGroupsThisCycle.add(group.id);
       totalGroupPosted++;
       log(`✅ GROUP [${attempts}] ${group.name} — ID: ${postId}`);
-
-      // Track for approval monitoring
       pendingGroupPosts.push({
         postId, groupId:group.id, groupName:group.name,
         postedAt:Date.now(), title:post.title,
         fullCaption, imageUrl, utm, triedGroups:[...triedIds]
       });
-      return; // success — stop trying
+      return;
     } catch(e) {
       groupStats[group.id].fail++;
       groupStats[group.id].lastFail = Date.now();
       log(`⚠️ GROUP [${attempts}] ${group.name} FAILED: ${e.message.substring(0,80)}`);
 
-      // Permanent ban: no permission / not a member — never retry this group
       const isPermanent = e.message.includes('missing permissions') ||
                           e.message.includes('does not exist') ||
                           e.message.includes('not support this operation') ||
@@ -296,7 +306,6 @@ async function postToGroupWithRetry(fullCaption, imageUrl, utm, post) {
         groupStats[group.id].cooldown = true;
         log(`🚫 ${group.name} on 24h cooldown (3 failures)`);
       }
-      // Continue loop to try next group
     }
   }
   log(`⚠️ All ${attempts} group attempts failed this round`);
@@ -311,33 +320,24 @@ async function retryPendingGroupPosts() {
 
   for(const p of pendingGroupPosts) {
     const ageH = (now - p.postedAt) / 3600000;
-
-    // Check if post still exists (approved) or was deleted (rejected)
     try {
       const options = { hostname:'graph.facebook.com',
         path:`/v19.0/${p.postId}?fields=id&access_token=${GROUP_TOKEN}`, method:'GET' };
       const data = await apiRequest(options, null);
-
       if(data.id) {
-        // Still exists = approved or pending — keep watching up to 72h
         if(ageH < 72) {
           stillPending.push(p);
           if(ageH > 48) log(`⏳ ${p.groupName}: post ${p.postId} still pending (${Math.round(ageH)}h)`);
         } else {
           log(`⏰ ${p.groupName}: post stuck 72h — retrying in new group`);
-          await postToGroupWithRetry(p.fullCaption, p.imageUrl, p.utm,
-            {title:p.title}, p.triedGroups);
+          await postToGroupWithRetry(p.fullCaption, p.imageUrl, p.utm, {title:p.title}, p.triedGroups);
         }
       } else if(data.error) {
-        // Error fetching = post was rejected/deleted
         log(`❌ ${p.groupName}: post rejected/deleted after ${Math.round(ageH)}h — retrying`);
         groupStats[p.groupId].fail++;
-        await postToGroupWithRetry(p.fullCaption, p.imageUrl, p.utm,
-          {title:p.title}, p.triedGroups);
+        await postToGroupWithRetry(p.fullCaption, p.imageUrl, p.utm, {title:p.title}, p.triedGroups);
       }
-    } catch(e) {
-      stillPending.push(p); // keep if check fails
-    }
+    } catch(e) { stillPending.push(p); }
   }
   pendingGroupPosts = stillPending;
 }
@@ -347,11 +347,9 @@ async function runPost() {
   if(!isActiveHour()) { log(`SKIP — Outside hours (${ACTIVE_FROM}:00-${ACTIVE_TO}:00 EST)`); return; }
   if(!PAGE_TOKEN) await fetchPageToken();
 
-  // Check stuck group posts + fire comment fallbacks
   await retryPendingGroupPosts();
   await checkAndCommentFallback();
 
-  // Infinite rotation: P01→P31→P01→P31...
   const idx = postIndex % 31;
   const round = Math.floor(postIndex / 31) + 1;
   const post = POSTS[idx];
@@ -360,7 +358,6 @@ async function runPost() {
   const seed = post.id * 137 + styleIndex * 31;
   const imageUrl = buildImageUrl(post.imgPrompt, seed);
 
-  // Reset cycle tracker at start of each new round
   if(idx === 0 && postIndex > 0) {
     postedGroupsThisCycle.clear();
     log(`🔄 New rotation round ${round} — group cycle reset`);
@@ -374,14 +371,12 @@ async function runPost() {
     log(`Caption ready (${caption.length} chars)`);
     const fullCaption = buildFullCaption(caption, utm, post);
 
-    // 1️⃣ Page post (always)
     try {
       const pageId = await publishToPage(fullCaption, imageUrl, utm);
       log(`✅ PAGE — ID: ${pageId}`);
       totalPosted++;
     } catch(e) { log(`❌ PAGE failed: ${e.message}`); }
 
-    // 2️⃣ Group post (smart retry across 27 groups)
     await postToGroupWithRetry(fullCaption, imageUrl, utm, post);
 
     postIndex++;
@@ -407,15 +402,19 @@ fetchPageToken().then(() => {
   log(`Scheduler ready — first post in 15s`);
   setTimeout(runPost, 15000);
   setInterval(runPost, INTERVAL_MS);
-  setInterval(retryPendingGroupPosts, 4 * 3600000); // check stuck posts every 4h
-  setInterval(checkAndCommentFallback, 30 * 60000); // comment fallback every 30min
+  setInterval(retryPendingGroupPosts, 4 * 3600000);
+  setInterval(checkAndCommentFallback, 30 * 60000);
 });
 
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 http.createServer((req, res) => {
-  // ── JSON STATS API (fetched by external dashboard every 10s) ──
-  if(req.url && req.url.startsWith('/auth/callback')) {     res.writeHead(200, {'Content-Type':'text/html'});     res.end(`<!DOCTYPE html><html><body style="background:#0a0f0d;color:#2dff8e;font-family:Arial;padding:40px;text-align:center"><h2>OHG Token Capture</h2><script>const t=new URLSearchParams(window.location.hash.substring(1)).get('access_token');if(t){document.body.innerHTML+='<p style="word-break:break-all;background:#111;padding:20px;border-radius:8px"><b>YOUR GROUP_TOKEN:</b><br>'+t+'</p><p>Copy above → paste into Railway as GROUP_TOKEN</p>';}else{document.body.innerHTML+='<p>No token found in URL</p>';}<\/script></body></html>`);     return;   }   if(req.url === '/api/stats') {
+  if(req.url && req.url.startsWith('/auth/callback')) {
+    res.writeHead(200, {'Content-Type':'text/html'});
+    res.end(`<!DOCTYPE html><html><body style="background:#0a0f0d;color:#2dff8e;font-family:Arial;padding:40px;text-align:center"><h2>OHG Token Capture</h2><script>const t=new URLSearchParams(window.location.hash.substring(1)).get('access_token');if(t){document.body.innerHTML+='<p style="word-break:break-all;background:#111;padding:20px;border-radius:8px"><b>YOUR GROUP_TOKEN:</b><br>'+t+'</p><p>Copy above → paste into Railway as GROUP_TOKEN</p>';}else{document.body.innerHTML+='<p>No token found in URL</p>';}<\/script></body></html>`);
+    return;
+  }
+  if(req.url === '/api/stats') {
     const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
     const nextPost = POSTS[postIndex % 31];
     const activeG  = PET_GROUPS.filter(g => !groupStats[g.id].permanent).length;
@@ -423,49 +422,21 @@ http.createServer((req, res) => {
     const coolG    = PET_GROUPS.filter(g => groupStats[g.id].cooldown && !groupStats[g.id].permanent).length;
     const nextGroup = pickNextGroup() || PET_GROUPS[0];
     const payload = {
-      server:         'OHG Pet Autopilot v5',
-      time_est:       est.toISOString(),
-      is_active:      isActiveHour(),
-      post_index:     postIndex % 31 + 1,
-      round:          Math.floor(postIndex / 31) + 1,
-      total_page:     totalPosted,
-      total_group:    totalGroupPosted,
-      total_comments: totalComments,
-      pending_count:  pendingGroupPosts.length,
-      groups_total:   PET_GROUPS.length,
-      groups_active:  activeG,
-      groups_banned:  bannedG,
-      groups_cooldown:coolG,
-      groups_used_cycle: postedGroupsThisCycle.size,
-      next_post: { id: nextPost.id, title: nextPost.title, cat: nextPost.cat },
-      next_group: { id: nextGroup.id, name: nextGroup.name },
-      page_token_len: PAGE_TOKEN ? PAGE_TOKEN.length : 0,
-      sys_token_len:  FB_SYS_TOKEN ? FB_SYS_TOKEN.length : 0,
-      group_token_set: GROUP_TOKEN && GROUP_TOKEN !== FB_SYS_TOKEN,
-      claude_key_set: CLAUDE_KEY ? true : false,
-      pending_posts: pendingGroupPosts.map(p => ({
-        title:      p.title,
-        group_name: p.groupName,
-        age_min:    Math.round((Date.now() - p.postedAt) / 60000),
-        commented:  p.commentFired || false,
-        tried:      (p.triedGroups || []).length
-      })),
-      group_stats: PET_GROUPS.map(g => ({
-        id:        g.id,
-        name:      g.name,
-        success:   groupStats[g.id].success,
-        fail:      groupStats[g.id].fail,
-        cooldown:  groupStats[g.id].cooldown,
-        permanent: groupStats[g.id].permanent || false,
-        is_next:   nextGroup && g.id === nextGroup.id
-      })),
-      recent_logs: logs.slice(0, 60)
+      server:'OHG Pet Autopilot v5', time_est:est.toISOString(), is_active:isActiveHour(),
+      post_index:postIndex%31+1, round:Math.floor(postIndex/31)+1,
+      total_page:totalPosted, total_group:totalGroupPosted, total_comments:totalComments,
+      pending_count:pendingGroupPosts.length, groups_total:PET_GROUPS.length,
+      groups_active:activeG, groups_banned:bannedG, groups_cooldown:coolG,
+      groups_used_cycle:postedGroupsThisCycle.size,
+      next_post:{id:nextPost.id,title:nextPost.title,cat:nextPost.cat},
+      next_group:{id:nextGroup.id,name:nextGroup.name},
+      page_token_len:PAGE_TOKEN?PAGE_TOKEN.length:0, sys_token_len:FB_SYS_TOKEN?FB_SYS_TOKEN.length:0,
+      group_token_set:GROUP_TOKEN&&GROUP_TOKEN!==FB_SYS_TOKEN, claude_key_set:CLAUDE_KEY?true:false,
+      pending_posts:pendingGroupPosts.map(p=>({title:p.title,group_name:p.groupName,age_min:Math.round((Date.now()-p.postedAt)/60000),commented:p.commentFired||false,tried:(p.triedGroups||[]).length})),
+      group_stats:PET_GROUPS.map(g=>({id:g.id,name:g.name,success:groupStats[g.id].success,fail:groupStats[g.id].fail,cooldown:groupStats[g.id].cooldown,permanent:groupStats[g.id].permanent||false,is_next:nextGroup&&g.id===nextGroup.id})),
+      recent_logs:logs.slice(0,60)
     };
-    res.writeHead(200, {
-      'Content-Type': 'application/json',
-      'Access-Control-Allow-Origin': '*',
-      'Cache-Control': 'no-cache'
-    });
+    res.writeHead(200,{'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Cache-Control':'no-cache'});
     res.end(JSON.stringify(payload));
     return;
   }
@@ -473,34 +444,14 @@ http.createServer((req, res) => {
   const nextPost = POSTS[postIndex % 31];
   const nextGroup = pickNextGroup() || PET_GROUPS[0];
   const round = Math.floor(postIndex / 31) + 1;
-  const cooldownGroups = PET_GROUPS.filter(g => groupStats[g.id].cooldown);
   const permanentGroups = PET_GROUPS.filter(g => groupStats[g.id].permanent);
   const activeGroups = PET_GROUPS.filter(g => !groupStats[g.id].permanent);
-
   const html = `<!DOCTYPE html>
 <html><head><title>OHG Pet Autopilot v5</title><meta http-equiv="refresh" content="30">
-<style>
-*{box-sizing:border-box;}
-body{font-family:Arial;background:#0a0f0d;color:#e8f5ec;padding:16px;max-width:1100px;margin:0 auto;font-size:13px;}
-h1{color:#2dff8e;margin:0 0 4px;}
-h3{color:#7a9e85;margin:12px 0 6px;}
-.stat{display:inline-block;background:#111a15;border:1px solid #1e2e23;border-radius:8px;padding:10px 16px;margin:4px;text-align:center;min-width:90px;}
-.sv{font-size:22px;font-weight:bold;color:#2dff8e;}
-.sl{font-size:10px;color:#4a6652;margin-top:3px;}
-.badge{background:#1a2e20;border:1px solid #2dff8e;border-radius:4px;padding:1px 7px;font-size:10px;color:#2dff8e;margin-left:6px;}
-table{width:100%;border-collapse:collapse;font-size:11px;}
-td,th{padding:4px 8px;text-align:left;border-bottom:1px solid #1a2e1a;}
-th{color:#2dff8e;background:#0d1a10;}
-.log{background:#000;border-radius:8px;padding:12px;font-family:monospace;font-size:10px;max-height:400px;overflow-y:auto;}
-.log div{padding:1px 0;border-bottom:1px solid #080808;}
-.box{background:#0d1a10;border:1px solid #1e2e23;border-radius:8px;padding:12px;margin:10px 0;}
-.warn{border-color:#ff8c00;background:#120d00;}
-.ok{color:#2dff8e;} .err{color:#ff5252;} .info{color:#64b5f6;} .warn-t{color:#ffb830;}
-</style></head>
+<style>*{box-sizing:border-box;}body{font-family:Arial;background:#0a0f0d;color:#e8f5ec;padding:16px;max-width:1100px;margin:0 auto;font-size:13px;}h1{color:#2dff8e;margin:0 0 4px;}h3{color:#7a9e85;margin:12px 0 6px;}.stat{display:inline-block;background:#111a15;border:1px solid #1e2e23;border-radius:8px;padding:10px 16px;margin:4px;text-align:center;min-width:90px;}.sv{font-size:22px;font-weight:bold;color:#2dff8e;}.sl{font-size:10px;color:#4a6652;margin-top:3px;}.badge{background:#1a2e20;border:1px solid #2dff8e;border-radius:4px;padding:1px 7px;font-size:10px;color:#2dff8e;margin-left:6px;}table{width:100%;border-collapse:collapse;font-size:11px;}td,th{padding:4px 8px;text-align:left;border-bottom:1px solid #1a2e1a;}th{color:#2dff8e;background:#0d1a10;}.log{background:#000;border-radius:8px;padding:12px;font-family:monospace;font-size:10px;max-height:400px;overflow-y:auto;}.log div{padding:1px 0;border-bottom:1px solid #080808;}.box{background:#0d1a10;border:1px solid #1e2e23;border-radius:8px;padding:12px;margin:10px 0;}.warn{border-color:#ff8c00;background:#120d00;}.ok{color:#2dff8e;}.err{color:#ff5252;}.info{color:#64b5f6;}.warn-t{color:#ffb830;}</style></head>
 <body>
-<h1>🐾 OHG Pet Autopilot v5 <span class="badge">27 Groups · Smart Retry · AI Images</span></h1>
+<h1>🐾 OHG Pet Autopilot v5 <span class="badge">51 Groups · 24/7 · Smart Retry · AI Images</span></h1>
 <p style="color:#4a6652">${est.toLocaleString('en-US',{timeZone:'America/New_York'})} EST &nbsp;|&nbsp; Auto-refresh 30s &nbsp;|&nbsp; Round ${round} of ∞</p>
-
 <div>
   <div class="stat"><div class="sv">${totalPosted}</div><div class="sl">Page Posts</div></div>
   <div class="stat"><div class="sv">${totalGroupPosted}</div><div class="sl">Group Posts</div></div>
@@ -514,106 +465,51 @@ th{color:#2dff8e;background:#0d1a10;}
   <div class="stat"><div class="sv">${PAGE_TOKEN?'✅':'⚠️'}</div><div class="sl">Page Token</div></div>
   <div class="stat"><div class="sv">${GROUP_TOKEN&&GROUP_TOKEN!==FB_SYS_TOKEN?'✅':'⚠️'}</div><div class="sl">Group Token</div></div>
 </div>
-
 <div style="margin:10px 0;padding:10px;background:#0d1a10;border-radius:8px;border:1px solid #1e2e23">
   <b>Next Post:</b> P${String(nextPost.id).padStart(2,'0')} — ${nextPost.title}<br>
   <b>Next Group:</b> ${nextGroup.name} (${nextGroup.id}) &nbsp;|&nbsp;
   <b>Groups used this cycle:</b> ${postedGroupsThisCycle.size}/${PET_GROUPS.length}
 </div>
-
-<h3>📢 27 Group Status</h3>
-<div class="box">
-<table>
+<h3>📢 ${PET_GROUPS.length} Group Status</h3>
+<div class="box"><table>
 <tr><th>#</th><th>Group Name</th><th>Group ID</th><th>✅ OK</th><th>❌ Fail</th><th>Status</th></tr>
-${PET_GROUPS.map((g,i)=>{
-  const s=groupStats[g.id];
-  const isNext=nextGroup&&g.id===nextGroup.id;
-  const usedThisCycle=postedGroupsThisCycle.has(g.id);
-  return `<tr style="${isNext?'background:#0a2a10':usedThisCycle?'color:#4a6652':''}">
-    <td>${i+1}</td><td>${g.name}</td><td style="font-size:10px">${g.id}</td>
-    <td class="ok">${s.success}</td><td class="${s.fail>0?'err':'ok'}">${s.fail}</td>
-    <td>${s.permanent?'<span style="color:#666">⛔ not member</span>':s.cooldown?'<span style="color:#ff5252">🚫 cooldown</span>':isNext?'<span class="ok">◀ NEXT</span>':usedThisCycle?'<span style="color:#4a6652">✓ used</span>':'<span class="ok">ready</span>'}</td>
-  </tr>`;
-}).join('')}
-</table>
-</div>
-
-${pendingGroupPosts.length>0?`<h3>⏳ Pending Admin Approval (${pendingGroupPosts.length})</h3>
-<div class="box warn">
-<table>
-<tr><th>Title</th><th>Group</th><th>Posted At</th><th>Age</th><th>Groups Tried</th><th>Comment</th></tr>
-${pendingGroupPosts.map(p=>{
-  const ageH=(Math.round((Date.now()-p.postedAt)/360000)/10);
-  return `<tr><td>${p.title.substring(0,38)}</td><td>${p.groupName}</td>
-    <td>${new Date(p.postedAt).toLocaleTimeString()}</td>
-    <td class="${ageH>48?'err':'warn-t'}">${ageH}h</td>
-    <td>${(p.triedGroups||[]).length}</td>
-    <td>${p.commentFired?'<span style="color:#64b5f6">💬 commented':'<span style="color:#ffb830">⏳ waiting'}</span></td></tr>`;
-}).join('')}
-</table>
-</div>`:'<div class="box" style="color:#2dff8e">✅ No posts stuck in review</div>'}
-
+${PET_GROUPS.map((g,i)=>{const s=groupStats[g.id];const isNext=nextGroup&&g.id===nextGroup.id;const usedThisCycle=postedGroupsThisCycle.has(g.id);return `<tr style="${isNext?'background:#0a2a10':usedThisCycle?'color:#4a6652':''}"><td>${i+1}</td><td>${g.name}</td><td style="font-size:10px">${g.id}</td><td class="ok">${s.success}</td><td class="${s.fail>0?'err':'ok'}">${s.fail}</td><td>${s.permanent?'<span style="color:#666">⛔ not member</span>':s.cooldown?'<span style="color:#ff5252">🚫 cooldown</span>':isNext?'<span class="ok">◀ NEXT</span>':usedThisCycle?'<span style="color:#4a6652">✓ used</span>':'<span class="ok">ready</span>'}</td></tr>`;}).join('')}
+</table></div>
+${pendingGroupPosts.length>0?`<h3>⏳ Pending Admin Approval (${pendingGroupPosts.length})</h3><div class="box warn"><table><tr><th>Title</th><th>Group</th><th>Age</th><th>Comment</th></tr>${pendingGroupPosts.map(p=>{const ageH=(Math.round((Date.now()-p.postedAt)/360000)/10);return `<tr><td>${p.title.substring(0,38)}</td><td>${p.groupName}</td><td class="${ageH>48?'err':'warn-t'}">${ageH}h</td><td>${p.commentFired?'<span style="color:#64b5f6">💬 commented':'<span style="color:#ffb830">⏳ waiting'}</span></td></tr>`;}).join('')}</table></div>`:'<div class="box" style="color:#2dff8e">✅ No posts stuck in review</div>'}
 <h3>📋 Log</h3>
-<div class="log">${logs.map(l=>`<div class="${
-  l.includes('✅')||l.includes('SUCCESS')?'ok':
-  l.includes('❌')||l.includes('ERROR')?'err':
-  l.includes('🔄')||l.includes('⟳')||l.includes('🔍')?'info':
-  l.includes('⚠️')||l.includes('🚫')||l.includes('SKIP')?'warn-t':''}"> ${l}</div>`).join('')}</div>
+<div class="log">${logs.map(l=>`<div class="${l.includes('✅')||l.includes('SUCCESS')?'ok':l.includes('❌')||l.includes('ERROR')?'err':l.includes('🔄')||l.includes('⟳')||l.includes('🔍')?'info':l.includes('⚠️')||l.includes('🚫')||l.includes('SKIP')?'warn-t':''}"> ${l}</div>`).join('')}</div>
 </body></html>`;
   res.writeHead(200,{'Content-Type':'text/html'});
   res.end(html);
 }).listen(PORT, () => log(`Dashboard on port ${PORT}`));
 
 // ── VIRAL POST COMMENT FALLBACK ──────────────────────────────────────────────
-// If group post pending > 30min, find group's most viral post and comment on it
-// This bypasses admin approval entirely — comments don't need approval
-
 async function findViralPostInGroup(groupId) {
   try {
-    // Get recent group posts sorted by engagement
-    const options = {
-      hostname: 'graph.facebook.com',
-      path: `/v19.0/${groupId}/feed?fields=id,message,likes.summary(true),comments.summary(true),created_time&limit=10&access_token=${GROUP_TOKEN}`,
-      method: 'GET'
-    };
+    const options = {hostname:'graph.facebook.com',path:`/v19.0/${groupId}/feed?fields=id,message,likes.summary(true),comments.summary(true),created_time&limit=10&access_token=${GROUP_TOKEN}`,method:'GET'};
     const data = await apiRequest(options, null);
     if(data.error || !data.data || data.data.length === 0) return null;
-
-    // Score each post: likes*1 + comments*3 (comments = higher engagement)
-    let best = null;
-    let bestScore = -1;
+    let best = null, bestScore = -1;
     for(const post of data.data) {
-      const likes = (post.likes && post.likes.summary) ? post.likes.summary.total_count : 0;
-      const comments = (post.comments && post.comments.summary) ? post.comments.summary.total_count : 0;
+      const likes = (post.likes&&post.likes.summary)?post.likes.summary.total_count:0;
+      const comments = (post.comments&&post.comments.summary)?post.comments.summary.total_count:0;
       const score = likes + comments * 3;
       if(score > bestScore) { bestScore = score; best = post; }
     }
     if(best) log(`🔥 Viral post found in ${groupId}: score=${bestScore} id=${best.id}`);
     return best;
-  } catch(e) {
-    log(`Viral search error in ${groupId}: ${e.message}`);
-    return null;
-  }
+  } catch(e) { log(`Viral search error in ${groupId}: ${e.message}`); return null; }
 }
 
 async function postCommentOnViral(viralPostId, commentText) {
-  const body = JSON.stringify({
-    message: commentText,
-    access_token: GROUP_TOKEN
-  });
-  const options = {
-    hostname: 'graph.facebook.com',
-    path: `/v19.0/${viralPostId}/comments`,
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(body) }
-  };
+  const body = JSON.stringify({message:commentText,access_token:GROUP_TOKEN});
+  const options = {hostname:'graph.facebook.com',path:`/v19.0/${viralPostId}/comments`,method:'POST',headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(body)}};
   const data = await apiRequest(options, body);
   if(data.error) throw new Error(data.error.message);
   return data.id;
 }
 
 function buildCommentText(caption, utm, post) {
-  // Shorter comment format — punchy, with link
   const lines = caption.split('\n').filter(l => l.trim());
   const hook = lines[0] || post.title.toUpperCase();
   const body = lines.slice(1,3).join(' ').trim();
@@ -621,51 +517,30 @@ function buildCommentText(caption, utm, post) {
   return `${hook}\n\n${body}\n\n🔗 ${utm}${siteLine}`;
 }
 
-// Called every 30 min to check pending group posts and fire comment fallback
 async function checkAndCommentFallback() {
   if(pendingGroupPosts.length === 0) return;
   const now = Date.now();
   const stillPending = [];
-
   for(const p of pendingGroupPosts) {
     const ageMin = (now - p.postedAt) / 60000;
-
     if(ageMin >= 30 && !p.commentFired) {
       log(`⏱️ ${p.groupName}: post pending ${Math.round(ageMin)}min — firing comment fallback`);
-
-      // Find viral post in that group
       const viralPost = await findViralPostInGroup(p.groupId);
       if(viralPost) {
         try {
-          const commentText = buildCommentText(p.fullCaption, p.utm, {title:p.title, aff:p.aff||false});
+          const commentText = buildCommentText(p.fullCaption, p.utm, {title:p.title,aff:p.aff||false});
           const commentId = await postCommentOnViral(viralPost.id, commentText);
           log(`💬 COMMENT posted on viral post in ${p.groupName} — Comment ID: ${commentId}`);
-          p.commentFired = true;
-          p.commentId = commentId;
-          p.commentAt = Date.now();
-          totalComments++;
-          stillPending.push(p); // keep watching original post
-        } catch(e) {
-          log(`💬 Comment failed in ${p.groupName}: ${e.message}`);
-          p.commentFired = true; // mark so we don't retry forever
-          stillPending.push(p);
-        }
-      } else {
-        log(`💬 No viral post found in ${p.groupName} — skipping comment`);
-        p.commentFired = true;
-        stillPending.push(p);
-      }
+          p.commentFired = true; p.commentId = commentId; p.commentAt = Date.now();
+          totalComments++; stillPending.push(p);
+        } catch(e) { log(`💬 Comment failed in ${p.groupName}: ${e.message}`); p.commentFired = true; stillPending.push(p); }
+      } else { log(`💬 No viral post found in ${p.groupName} — skipping comment`); p.commentFired = true; stillPending.push(p); }
     } else if(ageMin < 30) {
-      stillPending.push(p); // not 30min yet, keep watching
+      stillPending.push(p);
     } else {
-      // commentFired already, keep watching for approval up to 72h
       const ageH = ageMin / 60;
       if(ageH < 72) stillPending.push(p);
-      else {
-        log(`⏰ ${p.groupName}: post expired 72h — retrying in new group`);
-        await postToGroupWithRetry(p.fullCaption, p.imageUrl, p.utm,
-          {title:p.title}, p.triedGroups || []);
-      }
+      else { log(`⏰ ${p.groupName}: post expired 72h — retrying in new group`); await postToGroupWithRetry(p.fullCaption, p.imageUrl, p.utm, {title:p.title}, p.triedGroups||[]); }
     }
   }
   pendingGroupPosts = stillPending;
