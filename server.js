@@ -380,6 +380,8 @@ async function runPost() {
       totalPosted++;
       lastPagePostUrl = `https://www.facebook.com/${FB_PAGE_ID}/posts/${pageId.split('_')[1]||pageId}`;
       lastPagePostTitle = post.title;
+      // Send hourly email with next 2 groups to share manually
+      sendHourlyGroupEmail(lastPagePostUrl, lastPagePostTitle).catch(e => log('📧 Email err: '+e.message));
     } catch(e) { log(`❌ PAGE failed: ${e.message}`); }
 
     await postToGroupWithRetry(fullCaption, imageUrl, utm, post);
@@ -400,14 +402,14 @@ async function runPost() {
 // ── EMAIL NOTIFICATION SYSTEM ────────────────────────────────────────────────
 let lastPagePostUrl = '';
 let lastPagePostTitle = '';
-let lastEmailDay = -1;
+let groupEmailIndex = 0; // tracks which 2 groups to send next
 
 function sendEmail(subject, htmlBody) {
   return new Promise((resolve) => {
     if(!GMAIL_PASS) { log('⚠️ Email skipped — GMAIL_PASS not set'); resolve(false); return; }
     const tls = require('tls');
     const authPlain = Buffer.from(`\0${GMAIL_USER}\0${GMAIL_PASS}`).toString('base64');
-    const msgLines = [
+    const msg = [
       `From: OHG Autopilot <${GMAIL_USER}>`,
       `To: ${NOTIFY_EMAIL}`,
       `Subject: ${subject}`,
@@ -415,8 +417,7 @@ function sendEmail(subject, htmlBody) {
       'Content-Type: text/html; charset=utf-8',
       '',
       htmlBody
-    ];
-    const msg = msgLines.join('\r\n');
+    ].join('\r\n');
     let step = 0;
     const cmds = [
       `EHLO railway\r\n`,
@@ -432,7 +433,7 @@ function sendEmail(subject, htmlBody) {
       const r = d.toString();
       if(r.match(/^(220|250|235|354|221)/m)) {
         if(r.includes('221')) { sock.destroy(); log('📧 Email sent OK: ' + subject); resolve(true); return; }
-        if(step < cmds.length) { sock.write(cmds[step++]); }
+        if(step < cmds.length) sock.write(cmds[step++]);
       } else if(r.match(/^5\d\d/m)) {
         log('📧 Email error: ' + r.substring(0,80));
         sock.destroy(); resolve(false);
@@ -443,58 +444,73 @@ function sendEmail(subject, htmlBody) {
   });
 }
 
-function buildGroupEmail(postUrl, postTitle) {
-  const activeGroups = PET_GROUPS.filter(g => !groupStats[g.id].permanent).slice(0, 20);
-  const rows = activeGroups.map((g, i) => `
-    <tr style="background:${i%2===0?'#fff':'#f8f9fa'}">
-      <td style="padding:8px 12px;border:1px solid #dee2e6;color:#666">${i+1}</td>
-      <td style="padding:8px 12px;border:1px solid #dee2e6">${g.name}</td>
-      <td style="padding:8px 12px;border:1px solid #dee2e6">
-        <a href="https://www.facebook.com/groups/${g.id}" style="color:#1877f2;text-decoration:none;font-weight:bold">Open Group →</a>
-      </td>
-    </tr>`).join('');
+function buildHourlyEmail(postUrl, postTitle, group1, group2, emailNum, totalGroups) {
+  const now = new Date().toLocaleString('en-US', {timeZone:'America/New_York', hour:'numeric', minute:'2-digit', hour12:true});
+  const shareUrl1 = `https://www.facebook.com/groups/${group1.id}`;
+  const shareUrl2 = `https://www.facebook.com/groups/${group2.id}`;
 
-  return `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:680px;margin:0 auto;padding:20px;background:#f0f2f5">
-<div style="background:#0a0f0d;color:#2dff8e;padding:24px;border-radius:12px;text-align:center;margin-bottom:24px">
-  <h1 style="margin:0;font-size:24px">🐾 OHG Pet Autopilot</h1>
-  <p style="margin:8px 0 0;color:#7a9e85;font-size:14px">Daily Group Sharing Digest • ${new Date().toDateString()}</p>
+  return `<!DOCTYPE html><html><body style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;padding:16px;background:#f0f2f5">
+
+<div style="background:#0a0f0d;color:#2dff8e;padding:20px;border-radius:12px;text-align:center;margin-bottom:16px">
+  <h1 style="margin:0;font-size:22px">🐾 OHG Pet Autopilot</h1>
+  <p style="margin:6px 0 0;color:#7a9e85;font-size:13px">Hourly Share Reminder • ${now} EST</p>
 </div>
-<div style="background:#d4edda;border:1px solid #c3e6cb;border-radius:8px;padding:20px;margin-bottom:24px">
-  <h2 style="margin:0 0 12px;color:#155724;font-size:18px">📢 New Post Ready to Share!</h2>
-  <p style="margin:0 0 16px;color:#155724;font-size:16px"><strong>${postTitle}</strong></p>
-  <a href="${postUrl}" style="background:#1877f2;color:white;padding:12px 24px;border-radius:6px;text-decoration:none;font-weight:bold;display:inline-block">View Page Post →</a>
+
+<div style="background:#d4edda;border:1px solid #c3e6cb;border-radius:10px;padding:18px;margin-bottom:16px;text-align:center">
+  <p style="margin:0 0 6px;color:#155724;font-size:13px;font-weight:bold">📢 POST TO SHARE</p>
+  <p style="margin:0 0 14px;color:#155724;font-size:15px"><strong>${postTitle}</strong></p>
+  <a href="${postUrl}" style="background:#1877f2;color:white;padding:11px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;display:inline-block">👁 View Page Post</a>
 </div>
-<div style="background:white;border-radius:8px;padding:20px;margin-bottom:24px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
-  <h3 style="margin:0 0 8px;color:#333">📋 Share to These Groups</h3>
-  <p style="margin:0 0 16px;color:#666;font-size:14px">⏱️ Takes only 5 minutes — open all tabs at once, then share one by one</p>
-  <table style="width:100%;border-collapse:collapse">
-    <tr style="background:#1877f2;color:white">
-      <th style="padding:10px 12px;border:1px solid #1877f2;text-align:left">#</th>
-      <th style="padding:10px 12px;border:1px solid #1877f2;text-align:left">Group</th>
-      <th style="padding:10px 12px;border:1px solid #1877f2;text-align:left">Action</th>
-    </tr>
-    ${rows}
-  </table>
+
+<div style="background:white;border-radius:10px;padding:20px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,0.1)">
+  <p style="margin:0 0 16px;color:#333;font-size:15px;font-weight:bold;text-align:center">📤 Share to 2 Groups Now (takes 60 seconds)</p>
+
+  <div style="background:#f8f9fa;border-radius:8px;padding:16px;margin-bottom:12px;text-align:center">
+    <p style="margin:0 0 4px;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:1px">Group ${emailNum * 2 - 1} of ${totalGroups}</p>
+    <p style="margin:0 0 12px;color:#333;font-size:16px;font-weight:bold">${group1.name}</p>
+    <a href="${shareUrl1}" style="background:#42b72a;color:white;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;display:inline-block">✅ Open Group 1 →</a>
+  </div>
+
+  <div style="background:#f8f9fa;border-radius:8px;padding:16px;text-align:center">
+    <p style="margin:0 0 4px;color:#666;font-size:12px;text-transform:uppercase;letter-spacing:1px">Group ${emailNum * 2} of ${totalGroups}</p>
+    <p style="margin:0 0 12px;color:#333;font-size:16px;font-weight:bold">${group2.name}</p>
+    <a href="${shareUrl2}" style="background:#42b72a;color:white;padding:12px 32px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;display:inline-block">✅ Open Group 2 →</a>
+  </div>
 </div>
-<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:16px;margin-bottom:24px">
-  <strong>💡 How to share:</strong> Open the Page post → click <strong>Share</strong> → choose <strong>Share to a Group</strong> → select the group → Post!
+
+<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:14px;margin-bottom:16px">
+  <strong>💡 How to share in 3 taps:</strong><br>
+  1️⃣ Click a group button above<br>
+  2️⃣ Find the pinned post or go to your Page post<br>
+  3️⃣ Tap <strong>Share → Share to Group</strong> → Done!
 </div>
-<div style="background:white;border-radius:8px;padding:16px;font-size:12px;color:#666;text-align:center">
-  📊 Page Posts Today: ${totalPosted} | API Group Posts: ${totalGroupPosted}<br>
-  <a href="https://ohg-pet-autopilot-production.up.railway.app" style="color:#1877f2">View Live Dashboard</a> • onehealthglobe.com
+
+<div style="background:white;border-radius:8px;padding:12px;font-size:11px;color:#888;text-align:center">
+  Email ${emailNum} of ${totalGroups/2} today &nbsp;|&nbsp; Next email in ~1 hour<br>
+  <a href="https://ohg-pet-autopilot-production.up.railway.app" style="color:#1877f2">Live Dashboard</a> • onehealthglobe.com
 </div>
 </body></html>`;
 }
 
-async function checkAndSendDailyEmail() {
-  const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
-  const hour = est.getHours();
-  const day = est.getDate();
-  if(hour === 9 && lastEmailDay !== day && lastPagePostUrl) {
-    lastEmailDay = day;
-    const subject = `🐾 OHG Daily Share: "${lastPagePostTitle.substring(0,50)}"`;
-    await sendEmail(subject, buildGroupEmail(lastPagePostUrl, lastPagePostTitle));
-  }
+// Called right after each successful page post — sends hourly email with next 2 groups
+async function sendHourlyGroupEmail(postUrl, postTitle) {
+  const activeGroups = PET_GROUPS.filter(g => !groupStats[g.id].permanent);
+  if(activeGroups.length < 2) { log('📧 Not enough active groups for email'); return; }
+
+  // Pick next 2 groups in rotation
+  const idx1 = groupEmailIndex % activeGroups.length;
+  const idx2 = (groupEmailIndex + 1) % activeGroups.length;
+  const group1 = activeGroups[idx1];
+  const group2 = activeGroups[idx2];
+  const emailNum = Math.floor(groupEmailIndex / 2) + 1;
+  const totalGroups = Math.min(activeGroups.length, 20); // cap display at 20
+
+  groupEmailIndex = (groupEmailIndex + 2) % activeGroups.length;
+
+  const subject = `🐾 Share Now: ${group1.name} + ${group2.name} — "${postTitle.substring(0,35)}"`;
+  const html = buildHourlyEmail(postUrl, postTitle, group1, group2, emailNum, totalGroups);
+  await sendEmail(subject, html);
+  log(`📧 Hourly email sent for ${group1.name} + ${group2.name}`);
 }
 
 // STARTUP
@@ -510,7 +526,6 @@ fetchPageToken().then(() => {
   setInterval(runPost, INTERVAL_MS);
   setInterval(retryPendingGroupPosts, 4 * 3600000);
   setInterval(checkAndCommentFallback, 30 * 60000);
-  setInterval(checkAndSendDailyEmail, 60 * 60000); // check hourly for 9AM digest
 });
 
 // ── DASHBOARD ────────────────────────────────────────────────────────────────
