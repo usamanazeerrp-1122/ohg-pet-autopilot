@@ -837,7 +837,7 @@ http.createServer(async (req, res) => {
       try {
         const payload = JSON.parse(rawBody);
         // Ensure we always use the correct model
-        payload.model = payload.model || 'claude-sonnet-4-20250514';
+        payload.model = payload.model || 'claude-sonnet-4-5';
         const bodyStr = JSON.stringify(payload);
         const options = {
           hostname: 'api.anthropic.com',
