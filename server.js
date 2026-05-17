@@ -337,29 +337,17 @@ function apiRequest(options, body) {
 
 // ─── FIX: improved token fetch with error tracking ────────────────────────────
 async function fetchPageToken() {
-  log('Fetching Page Access Token...');
-  const options = { hostname:'graph.facebook.com', path:`/v19.0/me/accounts?access_token=${FB_SYS_TOKEN}`, method:'GET' };
-  try {
-    const data = await apiRequest(options, null);
-    if(data.error) {
-      lastTokenError = data.error.message;
-      tokenRefreshAttempts++;
-      log(`Token error: ${data.error.message}`);
-      // ─── FIX: send token expiry alert email ────────────────────────────────
-      if(data.error.message.includes('access blocked') || data.error.message.includes('expired') || data.error.message.includes('Invalid OAuth')) {
-        sendTokenAlertEmail(data.error.message).catch(()=>{});
-      }
-      PAGE_TOKEN = FB_SYS_TOKEN;
-      return;
-    }
-    if(data.data && data.data.length > 0) {
-      const page = data.data.find(p => p.id === FB_PAGE_ID) || data.data[0];
-      PAGE_TOKEN = page.access_token;
-      tokenRefreshAttempts = 0;
-      lastTokenError = '';
-      log(`Page token OK: ${page.name} (len=${PAGE_TOKEN.length})`);
-    } else { PAGE_TOKEN = FB_SYS_TOKEN; }
-  } catch(e) { log(`Token exception: ${e.message}`); PAGE_TOKEN = FB_SYS_TOKEN; }
+  // System User tokens work directly as Page tokens — skip /me/accounts exchange
+  // /me/accounts is for regular user tokens only and fails for System Users
+  if(FB_SYS_TOKEN) {
+    PAGE_TOKEN = FB_SYS_TOKEN;
+    tokenRefreshAttempts = 0;
+    lastTokenError = '';
+    log(`Page token set directly from FB_TOKEN (len=${PAGE_TOKEN.length})`);
+    return;
+  }
+  log('ERROR: FB_TOKEN is empty — set it in Railway Variables');
+  lastTokenError = 'FB_TOKEN not set';
 }
 
 // ─── FIX: token alert email ────────────────────────────────────────────────────
@@ -531,11 +519,7 @@ async function runPost() {
         log('📧 Sending email with previous post URL (page post failed)');
         sendHourlyGroupEmail(lastPagePostUrl, post.title + ' [repost]').catch(err => log('📧 Email err: '+err.message));
       } else {
-        // Send token alert if it's an auth error
-        if(e.message.includes('access blocked') || e.message.includes('OAuthException') || e.message.includes('expired')) {
-          await fetchPageToken();
-          sendTokenAlertEmail(e.message).catch(()=>{});
-        }
+        log('❌ Page post failed, no previous URL to email — check FB_TOKEN permissions');
       }
     }
     // GROUP POSTING DISABLED — re-enable when publish_to_groups permission added
@@ -674,7 +658,7 @@ async function sendHourlyGroupEmail(postUrl, postTitle) {
   log(`📧 Email sent → ${group1.name} + ${group2.name}`);
 }
 
-log('OHG Pet Autopilot Server v7.3 starting — PAGE+EMAIL mode, groups disabled...');
+log('OHG Pet Autopilot Server v7.4 starting — direct System User token, groups disabled...');
 log(`FB Posts: 62 | Groups: ${PET_GROUPS.length} | Interval: ${INTERVAL_MS/60000}min | Hours: ${ACTIVE_FROM}-${ACTIVE_TO} EST`);
 log(`Pinterest: ${process.env.PINTEREST_TOKEN ? '✅ Token set' : '⚠️ No token'}`);
 log(`Token: ${FB_SYS_TOKEN?'SET len='+FB_SYS_TOKEN.length:'MISSING'} | Claude: ${CLAUDE_KEY?'SET':'MISSING'}`);
@@ -684,8 +668,8 @@ fetchPageToken().then(() => {
   log(`Scheduler ready — first FB post in 15s`);
   setTimeout(runPost, 15000);
   setInterval(runPost, INTERVAL_MS);
-  setInterval(retryPendingGroupPosts, 4 * 3600000);
-  setInterval(checkAndCommentFallback, 30 * 60000);
+  // setInterval(retryPendingGroupPosts, 4 * 3600000); // GROUP DISABLED
+  // setInterval(checkAndCommentFallback, 30 * 60000); // GROUP DISABLED
   setTimeout(() => { log('[Pinterest] First pin firing...'); runPinterestScheduler(); }, 60000);
   setInterval(runPinterestScheduler, PINTEREST_INTERVAL_MS);
   log(`[Pinterest] Scheduler armed — every ${PINTEREST_INTERVAL_MS/3600000}hrs`);
@@ -842,7 +826,7 @@ http.createServer(async (req, res) => {
     const coolG = PET_GROUPS.filter(g=>groupStats[g.id].cooldown&&!groupStats[g.id].permanent).length;
     const nextGroup = pickNextGroup()||PET_GROUPS[0];
     const payload = {
-      server:'OHG v7.3', time_est:est.toISOString(), is_active:isActiveHour(),
+      server:'OHG v7.4', time_est:est.toISOString(), is_active:isActiveHour(),
       post_index:postIndex%62+1, round:Math.floor(postIndex/62)+1,
       total_page:totalPosted, total_group:totalGroupPosted, total_comments:totalComments,
       pending_count:pendingGroupPosts.length, groups_total:PET_GROUPS.length,
@@ -872,12 +856,12 @@ http.createServer(async (req, res) => {
   const ptBoardsReady = Object.values(PT_BOARDS).filter(b=>b.id).length;
   const tokenOk = !lastTokenError;
 
-  const dashHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>OHG Pet Autopilot v7.1</title><meta http-equiv="refresh" content="30">
+  const dashHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>OHG Pet Autopilot v7.4</title><meta http-equiv="refresh" content="30">
 <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0b1a0f;color:#e2f0e6;min-height:100vh;font-size:13px;}.topbar{background:#0d1f13;border-bottom:1px solid #1a3020;padding:14px 20px;display:flex;align-items:center;gap:12px;}.logo{width:38px;height:38px;background:#1a9e5c;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}.logo-title{font-size:15px;font-weight:600;color:#e2f0e6;}.logo-sub{font-size:11px;color:#5a8a6a;margin-top:1px;}.live-pill{background:#0f3a1e;border:1px solid #1a9e5c;border-radius:20px;padding:4px 12px;display:flex;align-items:center;gap:6px;margin-left:auto;}.dot{width:7px;height:7px;border-radius:50%;background:#1a9e5c;animation:blink 2s infinite;}@keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}.live-pill span{font-size:11px;color:#1a9e5c;font-weight:600;}.main{padding:16px 20px;max-width:1200px;margin:0 auto;}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}.card{background:#0d1f13;border:1px solid #1a3020;border-radius:10px;padding:14px 16px;}.label{font-size:10px;color:#5a8a6a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}.val{font-size:26px;font-weight:600;color:#e2f0e6;line-height:1;}.sub{font-size:11px;color:#5a8a6a;margin-top:4px;}.val.green{color:#1a9e5c;}.val.amber{color:#c8900a;}.val.red{color:#e05555;}.alert-card{background:#1a0808;border:1px solid #5a2020;border-radius:10px;padding:14px 16px;margin-bottom:12px;}.alert-title{font-size:12px;color:#e05555;font-weight:700;margin-bottom:6px;}.alert-msg{font-size:11px;color:#c08080;line-height:1.6;}.pt-card{background:#0a0f1a;border:1px solid #1a2a3a;border-radius:10px;padding:14px 16px;margin-bottom:12px;}.pt-title{font-size:11px;color:#4a7aaa;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}.pt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}.pt-box{background:#0d1525;border-radius:8px;padding:10px;text-align:center;}.pt-val{font-size:20px;font-weight:600;color:#4a9ed4;}.pt-lbl{font-size:9px;color:#3a5a7a;margin-top:3px;}.card-title{font-size:11px;color:#5a8a6a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;display:flex;align-items:center;gap:6px;}.next-box{background:#0f3a1e;border:1px solid #1a4a26;border-radius:8px;padding:10px 12px;margin-bottom:10px;}.next-tag{font-size:9px;color:#1a9e5c;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}.next-title{font-size:13px;color:#e2f0e6;font-weight:500;line-height:1.4;}.next-meta{font-size:11px;color:#5a8a6a;margin-top:4px;}.bar-wrap{background:#1a3020;border-radius:3px;height:5px;overflow:hidden;margin-bottom:5px;}.bar-fill{height:100%;border-radius:3px;}.bar-green{background:#1a9e5c;}.bar-blue{background:#4a9ed4;}.bar-label{display:flex;justify-content:space-between;font-size:10px;color:#5a8a6a;margin-bottom:10px;}.mini3{display:flex;gap:8px;margin-top:8px;}.mini-box{flex:1;background:#0f3a1e;border-radius:7px;padding:8px;text-align:center;}.mini-val{font-size:17px;font-weight:600;color:#1a9e5c;}.mini-lbl{font-size:9px;color:#5a8a6a;margin-top:2px;}.g-scroll{max-height:200px;overflow-y:auto;}.g-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #0f1f14;}.g-row:last-child{border:none;}.g-num{font-size:10px;color:#2a4a32;min-width:22px;}.g-name{flex:1;font-size:12px;color:#a0c0a8;}.g-id{font-size:9px;color:#2a4a32;font-family:monospace;}.badge{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600;white-space:nowrap;}.b-ok{background:#0f3a1e;color:#1a9e5c;}.b-ban{background:#2a1010;color:#7a3535;}.b-cool{background:#2a1f08;color:#8a6018;}.b-next{background:#1a4a26;color:#2dff8e;border:1px solid #1a9e5c;}.b-used{background:#111f16;color:#3a5a44;}.log-wrap{max-height:200px;overflow-y:auto;font-family:monospace;font-size:11px;}.log-line{padding:3px 0;border-bottom:1px solid #0c1810;color:#4a6a52;line-height:1.4;}.log-ok{color:#1a9e5c;}.log-err{color:#e05555;}.log-warn{color:#c8900a;}.log-info{color:#4a9ed4;}.proxy-card{background:#0a1520;border:1px solid #1a3a50;border-radius:10px;padding:14px 16px;margin-bottom:12px;}.proxy-title{font-size:11px;color:#4a9ed4;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}.foot{border-top:1px solid #1a3020;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}.foot a{color:#1a9e5c;font-size:11px;text-decoration:none;}.foot span{font-size:11px;color:#3a5a44;}</style></head>
 <body>
 <div class="topbar">
   <div class="logo">🐾</div>
-  <div><div class="logo-title">OHG Pet Autopilot <span style="font-size:11px;color:#1a9e5c;background:#0f3a1e;padding:2px 8px;border-radius:4px;margin-left:6px;">v7.3</span></div>
+  <div><div class="logo-title">OHG Pet Autopilot <span style="font-size:11px;color:#1a9e5c;background:#0f3a1e;padding:2px 8px;border-radius:4px;margin-left:6px;">v7.4</span></div>
   <div class="logo-sub">${est.toLocaleString('en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})} EST &nbsp;·&nbsp; Auto-refresh 30s</div></div>
   <div class="live-pill"><div class="dot"></div><span>${isActiveHour() ? 'Active' : 'Sleeping'}</span></div>
 </div>
@@ -967,7 +951,7 @@ http.createServer(async (req, res) => {
 </div>
 <div class="foot">
   <a href="https://onehealthglobe.com" target="_blank">onehealthglobe.com</a>
-  <span>OHG v7.3 · FB 62 posts · Pinterest ${PT_POSTS.length} posts · Claude Proxy ✅</span>
+  <span>OHG v7.4 · FB 62 posts · Pinterest ${PT_POSTS.length} posts · Claude Proxy ✅</span>
   <a href="/api/stats" target="_blank">API stats →</a>
 </div></body></html>`;
 
