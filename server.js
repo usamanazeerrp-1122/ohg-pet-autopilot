@@ -275,7 +275,7 @@ let lastPagePostTitle = '';
 let groupEmailIndex = 0;
 
 // ── PINTEREST MODULE ──────────────────────────────────────────────────────────
-const PINTEREST_INTERVAL_MS = 9000000; // 2.5 hours
+const PINTEREST_INTERVAL_MS = 9000000;
 
 const PT_BOARDS = {
   dog_care:      { id: process.env.PINTEREST_BOARD_DOG_CARE      || '', name: 'Dog Care Advice' },
@@ -805,8 +805,6 @@ fetchPageToken().then(() => {
   setInterval(runPost, INTERVAL_MS);
   setInterval(retryPendingGroupPosts, 4 * 3600000);
   setInterval(checkAndCommentFallback, 30 * 60000);
-
-  // Pinterest scheduler — first pin after 60s, then every 2.5 hours
   setTimeout(() => {
     log('[Pinterest] First pin firing...');
     runPinterestScheduler();
@@ -817,7 +815,69 @@ fetchPageToken().then(() => {
 
 // ── HTTP SERVER ───────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
-http.createServer((req, res) => {
+http.createServer(async (req, res) => {
+
+  // ── CORS HEADERS (needed for dashboard HTML file to call Railway) ──────────
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
+  // ══════════════════════════════════════════════════════════════════
+  // ── CLAUDE PROXY — NEW ROUTE (used by OHG-Content-Manager.html) ──
+  // ══════════════════════════════════════════════════════════════════
+  if (req.url === '/claude-proxy' && req.method === 'POST') {
+    let rawBody = '';
+    req.on('data', chunk => rawBody += chunk);
+    req.on('end', async () => {
+      try {
+        const payload = JSON.parse(rawBody);
+        // Ensure we always use the correct model
+        payload.model = payload.model || 'claude-sonnet-4-20250514';
+        const bodyStr = JSON.stringify(payload);
+        const options = {
+          hostname: 'api.anthropic.com',
+          path: '/v1/messages',
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': CLAUDE_KEY,
+            'anthropic-version': '2023-06-01',
+            'anthropic-beta': 'web-search-2025-03-05',
+            'Content-Length': Buffer.byteLength(bodyStr),
+          },
+        };
+        const req2 = https.request(options, (res2) => {
+          let data = '';
+          res2.on('data', chunk => data += chunk);
+          res2.on('end', () => {
+            res.writeHead(res2.statusCode, { 'Content-Type': 'application/json' });
+            res.end(data);
+            log(`[Proxy] Claude call — status ${res2.statusCode}`);
+          });
+        });
+        req2.on('error', (e) => {
+          log(`[Proxy] Request error: ${e.message}`);
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: { message: e.message } }));
+        });
+        req2.write(bodyStr);
+        req2.end();
+      } catch (e) {
+        log(`[Proxy] Parse error: ${e.message}`);
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: { message: 'Invalid JSON: ' + e.message } }));
+      }
+    });
+    return;
+  }
+  // ══════════════════════════════════════════════════════════════════
+  // ── END CLAUDE PROXY ──────────────────────────────────────────────
+  // ══════════════════════════════════════════════════════════════════
 
   if(req.url && req.url.startsWith('/auth/callback')) {
     res.writeHead(200,{'Content-Type':'text/html'});
@@ -825,19 +885,17 @@ http.createServer((req, res) => {
     return;
   }
 
-  // Pinterest routes
   if(req.url === '/pinterest/boards') {
     fetchPinterestBoards()
-      .then(data => { res.writeHead(200,{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}); res.end(JSON.stringify(data, null, 2)); })
+      .then(data => { res.writeHead(200,{'Content-Type':'application/json'}); res.end(JSON.stringify(data, null, 2)); })
       .catch(err => { res.writeHead(500,{'Content-Type':'application/json'}); res.end(JSON.stringify({error: err.message})); });
     return;
   }
 
   if(req.url === '/pinterest/stats') {
-    res.writeHead(200,{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+    res.writeHead(200,{'Content-Type':'application/json'});
     res.end(JSON.stringify({
-      totalPins: ptPostCount,
-      lastPin: ptLastPost,
+      totalPins: ptPostCount, lastPin: ptLastPost,
       nextPost: PT_POSTS[ptIndex % PT_POSTS.length]?.topic,
       log: ptLog,
       boardsReady: Object.values(PT_BOARDS).filter(b => b.id).length,
@@ -881,7 +939,7 @@ http.createServer((req, res) => {
       page_token_ok: PAGE_TOKEN ? true : false,
       recent_logs: logs.slice(0,60)
     };
-    res.writeHead(200,{'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Cache-Control':'no-cache'});
+    res.writeHead(200,{'Content-Type':'application/json','Cache-Control':'no-cache'});
     res.end(JSON.stringify(payload));
     return;
   }
@@ -921,9 +979,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .label{font-size:10px;color:#5a8a6a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}
 .val{font-size:26px;font-weight:600;color:#e2f0e6;line-height:1;}
 .sub{font-size:11px;color:#5a8a6a;margin-top:4px;}
-.val.green{color:#1a9e5c;}
-.val.amber{color:#c8900a;}
-.val.red{color:#e05555;}
+.val.green{color:#1a9e5c;}.val.amber{color:#c8900a;}.val.red{color:#e05555;}
 .pt-card{background:#0a0f1a;border:1px solid #1a2a3a;border-radius:10px;padding:14px 16px;margin-bottom:12px;}
 .pt-title{font-size:11px;color:#4a7aaa;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
 .pt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
@@ -937,9 +993,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .next-meta{font-size:11px;color:#5a8a6a;margin-top:4px;}
 .bar-wrap{background:#1a3020;border-radius:3px;height:5px;overflow:hidden;margin-bottom:5px;}
 .bar-fill{height:100%;border-radius:3px;transition:width .4s;}
-.bar-green{background:#1a9e5c;}
-.bar-amber{background:#c8900a;}
-.bar-blue{background:#4a9ed4;}
+.bar-green{background:#1a9e5c;}.bar-blue{background:#4a9ed4;}
 .bar-label{display:flex;justify-content:space-between;font-size:10px;color:#5a8a6a;margin-bottom:10px;}
 .mini3{display:flex;gap:8px;margin-top:8px;}
 .mini-box{flex:1;background:#0f3a1e;border-radius:7px;padding:8px;text-align:center;}
@@ -952,17 +1006,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .g-name{flex:1;font-size:12px;color:#a0c0a8;}
 .g-id{font-size:9px;color:#2a4a32;font-family:monospace;}
 .badge{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600;white-space:nowrap;}
-.b-ok{background:#0f3a1e;color:#1a9e5c;}
-.b-ban{background:#2a1010;color:#7a3535;}
-.b-cool{background:#2a1f08;color:#8a6018;}
-.b-next{background:#1a4a26;color:#2dff8e;border:1px solid #1a9e5c;}
+.b-ok{background:#0f3a1e;color:#1a9e5c;}.b-ban{background:#2a1010;color:#7a3535;}
+.b-cool{background:#2a1f08;color:#8a6018;}.b-next{background:#1a4a26;color:#2dff8e;border:1px solid #1a9e5c;}
 .b-used{background:#111f16;color:#3a5a44;}
 .log-wrap{max-height:200px;overflow-y:auto;font-family:monospace;font-size:11px;}
 .log-line{padding:3px 0;border-bottom:1px solid #0c1810;color:#4a6a52;line-height:1.4;}
-.log-ok{color:#1a9e5c;}
-.log-err{color:#e05555;}
-.log-warn{color:#c8900a;}
-.log-info{color:#4a9ed4;}
+.log-ok{color:#1a9e5c;}.log-err{color:#e05555;}.log-warn{color:#c8900a;}.log-info{color:#4a9ed4;}
+.proxy-card{background:#0a1520;border:1px solid #1a3a50;border-radius:10px;padding:14px 16px;margin-bottom:12px;}
+.proxy-title{font-size:11px;color:#4a9ed4;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
 .foot{border-top:1px solid #1a3020;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
 .foot a{color:#1a9e5c;font-size:11px;text-decoration:none;}
 .foot span{font-size:11px;color:#3a5a44;}
@@ -983,6 +1034,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="card"><div class="label">Group posts</div><div class="val">${totalGroupPosted}</div><div class="sub">Auto-distributed</div></div>
     <div class="card"><div class="label">Comments</div><div class="val">${totalComments}</div><div class="sub">Viral fallback</div></div>
     <div class="card"><div class="label">Pending review</div><div class="val ${pendingGroupPosts.length > 0 ? 'amber' : 'green'}">${pendingGroupPosts.length}</div><div class="sub">Awaiting FB approval</div></div>
+  </div>
+
+  <div class="proxy-card">
+    <div class="proxy-title">🔌 Claude Proxy — Content Manager Bridge</div>
+    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
+      <div style="font-size:12px;color:#a0c0d8;line-height:1.7;">
+        <span style="color:#4a9ed4;">POST</span> <code style="background:#0d1f2e;padding:2px 8px;border-radius:4px;font-size:11px;">/claude-proxy</code> — active ✅<br>
+        <span style="font-size:10px;color:#3a5a7a;">Used by OHG-Content-Manager.html to call Claude API securely via Railway</span>
+      </div>
+      <div style="margin-left:auto;text-align:right;">
+        <div style="font-size:11px;color:#4a9ed4;">CORS: enabled ✅</div>
+        <div style="font-size:10px;color:#3a5a7a;">web-search beta: enabled ✅</div>
+      </div>
+    </div>
   </div>
 
   <div class="pt-card">
@@ -1057,7 +1122,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         if(l.includes('✅')||l.includes('SUCCESS')) cls += ' log-ok';
         else if(l.includes('❌')||l.includes('ERROR')) cls += ' log-err';
         else if(l.includes('⚠️')||l.includes('🚫')||l.includes('SKIP')) cls += ' log-warn';
-        else if(l.includes('[Pinterest]')||l.includes('📧')||l.includes('🔄')) cls += ' log-info';
+        else if(l.includes('[Pinterest]')||l.includes('📧')||l.includes('🔄')||l.includes('[Proxy]')) cls += ' log-info';
         const ts = l.match(/\[([\d\-T:.Z]+)\]/);
         const msg = ts ? l.replace(ts[0],'').trim() : l;
         const time = ts ? new Date(ts[1]).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '';
@@ -1068,7 +1133,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 <div class="foot">
   <a href="https://onehealthglobe.com" target="_blank">onehealthglobe.com</a>
-  <span>OHG v7 · FB 62 posts · Pinterest ${PT_POSTS.length} posts · 24/7</span>
+  <span>OHG v7 · FB 62 posts · Pinterest ${PT_POSTS.length} posts · Claude Proxy ✅ · 24/7</span>
   <a href="/api/stats" target="_blank">API stats →</a>
 </div>
 </body></html>`;
