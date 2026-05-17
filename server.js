@@ -274,6 +274,181 @@ let lastPagePostUrl = '';
 let lastPagePostTitle = '';
 let groupEmailIndex = 0;
 
+// ── PINTEREST MODULE ──────────────────────────────────────────────────────────
+const PINTEREST_INTERVAL_MS = 9000000; // 2.5 hours
+
+const PT_BOARDS = {
+  dog_care:      { id: process.env.PINTEREST_BOARD_DOG_CARE      || '', name: 'Dog Care Advice' },
+  cat_tips:      { id: process.env.PINTEREST_BOARD_CAT_CARE_TIPS || '', name: 'Cat Care Tips' },
+  cat_advice:    { id: process.env.PINTEREST_BOARD_CAT_CARE_ADV  || '', name: 'Cat Care Advice' },
+  safety:        { id: process.env.PINTEREST_BOARD_SAFETY        || '', name: 'Pet Safety Tips' },
+  food:          { id: process.env.PINTEREST_BOARD_FOOD          || '', name: 'Pet Food' },
+  hygiene:       { id: process.env.PINTEREST_BOARD_HYGIENE       || '', name: 'Pet Hygiene & Cleaning' },
+  training:      { id: process.env.PINTEREST_BOARD_TRAINING      || '', name: 'Pet Training Basics' },
+  pets_care:     { id: process.env.PINTEREST_BOARD_PETS_CARE     || '', name: 'Pets Care' },
+  family_health: { id: process.env.PINTEREST_BOARD_FAMILY_HEALTH || '', name: 'Family & Pet Health' },
+  ohg_blog:      { id: process.env.PINTEREST_BOARD_OHG_BLOG      || '', name: 'One Health Globe Blog' },
+  healthy_home:  { id: process.env.PINTEREST_BOARD_HEALTHY_HOME  || '', name: 'Healthy Home for Pets' },
+  seasonal:      { id: process.env.PINTEREST_BOARD_SEASONAL      || '', name: 'Seasonal Pet Safety' },
+  wellness:      { id: process.env.PINTEREST_BOARD_WELLNESS      || '', name: 'Pet Wellness Products' },
+};
+
+const PT_POSTS = [
+  { url:`${BASE_URL}/beagle-temperament/`,                                        board:'dog_care',      topic:'Beagle dog breed complete guide for families' },
+  { url:`${BASE_URL}/boxer-breed-temperament/`,                                   board:'dog_care',      topic:'Boxer dog breed personality and care guide' },
+  { url:`${BASE_URL}/english-bulldog-temperament/`,                               board:'dog_care',      topic:'Bulldog breed temperament and daily care tips' },
+  { url:`${BASE_URL}/german-shepherd-temperament/`,                               board:'dog_care',      topic:'German Shepherd breed facts and training tips' },
+  { url:`${BASE_URL}/rottweiler-temperament/`,                                    board:'dog_care',      topic:'Rottweiler breed guide: loyalty and training' },
+  { url:`${BASE_URL}/pomeranian-dog-breed-temperament-care-guide/`,               board:'dog_care',      topic:'Pomeranian: small dog with a huge personality' },
+  { url:`${BASE_URL}/how-to-walk-your-cat-safely-harness-training-for-beginners/`,board:'training',      topic:'How to harness train your dog or cat safely' },
+  { url:`${BASE_URL}/dog-paw-scanner/`,                                           board:'dog_care',      topic:'Dog paw health: what your dog\'s paws are telling you' },
+  { url:`${BASE_URL}/simple-tips-to-know-signs-of-osteoarthritis-in-cats/`,      board:'family_health', topic:'Osteoarthritis in pets: signs, causes and relief' },
+  { url:`${BASE_URL}/persian-cat-temperament/`,                                   board:'cat_tips',      topic:'Persian cat breed guide: grooming and temperament' },
+  { url:`${BASE_URL}/ragdoll-temperament/`,                                       board:'cat_tips',      topic:'Ragdoll cat: the gentle giant indoor breed' },
+  { url:`${BASE_URL}/new-kitten-planner/`,                                        board:'cat_advice',    topic:'New kitten checklist: complete first-week planner' },
+  { url:`${BASE_URL}/cat-grooming-guide-2/`,                                      board:'hygiene',       topic:'Complete cat grooming guide you can do at home' },
+  { url:`${BASE_URL}/pet-hygiene-score-card/`,                                    board:'hygiene',       topic:'Pet hygiene scorecard: is your pet clean enough?' },
+  { url:`${BASE_URL}/top-5-deadly-common-dog-diseases-symptoms-prevention-treatment-pictures/`, board:'family_health', topic:'10 deadly pet diseases every owner must recognize' },
+  { url:`${BASE_URL}/pet-first-aid-kit-checklist/`,                               board:'safety',        topic:'Pet first aid guide: save your dog or cat in an emergency' },
+  { url:`${BASE_URL}/pet-vaccine-tracker/`,                                       board:'family_health', topic:'Essential pet vaccines: complete schedule guide' },
+  { url:`${BASE_URL}/common-plants-that-may-be-toxic-to-pets/`,                  board:'safety',        topic:'Toxic houseplants dangerous to dogs and cats' },
+  { url:`${BASE_URL}/digital-awareness-to-minimize-zoonosis-spread/`,            board:'family_health', topic:'Zoonosis: diseases pets can spread to your family' },
+  { url:`${BASE_URL}/pet-food-queries/`,                                          board:'food',          topic:'Pet food FAQ: what to actually feed your pet' },
+  { url:`${BASE_URL}/dog-and-cat-vaccine-tracker-for-pet-owners/`,               board:'family_health', topic:'Dog and cat vaccine tracker every owner needs' },
+  { url:`${BASE_URL}/room-by-room-pet-safety-guide-for-families/`,               board:'safety',        topic:'Room-by-room pet safety guide for families' },
+  { url:`${BASE_URL}/indoor-cat-safety-checklist-for-everyday-home-risks/`,      board:'safety',        topic:'Indoor cat safety mistakes that put your pet at risk' },
+  { url:`${BASE_URL}/pet-safety-hub/`,                                            board:'pets_care',     topic:'The complete pet safety hub for responsible owners' },
+  { url:`${BASE_URL}/healthy-pets-and-human-bond-for-family-life/`,              board:'family_health', topic:'Healthy pets and happy humans: the bond science proves' },
+  { url:`${BASE_URL}/basic-pet-training-tools-for-better-command-prompting-and-home-behavior/`, board:'training', topic:'Basic pet training tools that actually work at home' },
+  { url:`${BASE_URL}/spring-pet-safety-checklist-for-dogs-and-cats-easy-home-and-garden-tips/`, board:'seasonal', topic:'Spring pet safety checklist for dogs and cats' },
+  { url:`${BASE_URL}/helpful-everyday-wellness-ideas-for-safer-pets-and-smarter-homes/`, board:'wellness', topic:'Everyday wellness ideas for safer smarter pets' },
+  { url:`${BASE_URL}/safe-drinking-water-at-home-7-hygiene-rules-2/`,            board:'healthy_home',  topic:'Safe drinking water for pets: 7 rules you must follow' },
+  { url:`${BASE_URL}/`,                                                           board:'ohg_blog',      topic:'One Health Globe: expert pet care and safety guides' },
+  { url:`${BASE_URL}/dog-vaccines-matter-why-staying-current-protects-health-one-health-globe/`, board:'family_health', topic:'Why dog vaccines are the most important thing this year' },
+  { url:`${BASE_URL}/protecting-cats-from-ticks-indoor-and-outdoor-risks-explained/`, board:'cat_tips', topic:'Ticks on your cat: what you must do right now' },
+  { url:`${BASE_URL}/how-to-prevent-cat-paw-scratches-at-home/`,                 board:'cat_advice',    topic:'How to stop cat scratches before they draw blood' },
+];
+
+let ptIndex = 0;
+let ptPostCount = 0;
+let ptLastPost = null;
+let ptLog = [];
+
+function pinterestRequest(method, path, body) {
+  return new Promise((resolve, reject) => {
+    const token = process.env.PINTEREST_TOKEN;
+    if (!token) return reject(new Error('PINTEREST_TOKEN not set'));
+    const data = body ? JSON.stringify(body) : null;
+    const options = {
+      hostname: 'api.pinterest.com',
+      path: `/v5${path}`,
+      method,
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        ...(data && { 'Content-Length': Buffer.byteLength(data) }),
+      },
+    };
+    const req = https.request(options, (res) => {
+      let raw = '';
+      res.on('data', chunk => raw += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(raw);
+          if (res.statusCode >= 200 && res.statusCode < 300) resolve(parsed);
+          else reject(new Error(`Pinterest ${res.statusCode}: ${JSON.stringify(parsed)}`));
+        } catch(e) { reject(new Error(`Pinterest parse error: ${raw.substring(0,200)}`)); }
+      });
+    });
+    req.on('error', reject);
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
+async function generatePinContent(post) {
+  return new Promise((resolve) => {
+    const prompt = `You are a Pinterest SEO expert for a pet care website targeting US pet owners.
+Write Pinterest pin content for: "${post.topic}"
+URL: ${post.url}
+Rules:
+- Title: max 100 chars, compelling, includes main keyword, no emoji, no quotes
+- Description: 200-300 chars, keyword-rich, natural language, ends with CTA like "Read the full guide"
+- Target: US pet owners, warm buying audience, Pinterest search optimized
+Respond ONLY in this exact JSON format, no preamble:
+{"title":"...","description":"..."}`;
+    const body = JSON.stringify({ model:'claude-sonnet-4-5', max_tokens:300, messages:[{role:'user',content:prompt}] });
+    const options = {
+      hostname:'api.anthropic.com', path:'/v1/messages', method:'POST',
+      headers:{'x-api-key':CLAUDE_KEY,'anthropic-version':'2023-06-01','Content-Type':'application/json','Content-Length':Buffer.byteLength(body)},
+    };
+    const req = https.request(options, (res) => {
+      let raw = '';
+      res.on('data', chunk => raw += chunk);
+      res.on('end', () => {
+        try {
+          const parsed = JSON.parse(raw);
+          const text = parsed.content?.[0]?.text || '';
+          resolve(JSON.parse(text.replace(/```json|```/g,'').trim()));
+        } catch {
+          resolve({ title: post.topic, description: `${post.topic} — expert advice for pet owners. Read the full guide on OneHealthGlobe!` });
+        }
+      });
+    });
+    req.on('error', () => resolve({ title: post.topic, description: `${post.topic} — expert pet care advice on OneHealthGlobe!` }));
+    req.write(body); req.end();
+  });
+}
+
+async function runPinterestScheduler() {
+  if (!process.env.PINTEREST_TOKEN) { log('[Pinterest] Skipping — PINTEREST_TOKEN not set'); return; }
+  const post = PT_POSTS[ptIndex % PT_POSTS.length];
+  ptIndex++;
+  const board = PT_BOARDS[post.board];
+  if (!board || !board.id) {
+    const msg = `[Pinterest] Board ID not set for "${post.board}" — add PINTEREST_BOARD_* to Railway vars`;
+    log(msg);
+    ptLog.unshift({ time: new Date().toISOString(), error: msg, topic: post.topic });
+    return;
+  }
+  try {
+    log(`[Pinterest] Pinning → ${board.name}: ${post.topic}`);
+    const content = await generatePinContent(post);
+    const result = await pinterestRequest('POST', '/pins', {
+      link: post.url,
+      title: content.title,
+      description: content.description,
+      board_id: board.id,
+      media_source: { source_type: 'image_url', url: `${post.url}?og=1` },
+    });
+    ptPostCount++;
+    ptLastPost = { time: new Date().toISOString(), topic: post.topic, url: post.url, board: board.name, pinId: result.id, title: content.title };
+    ptLog.unshift(ptLastPost);
+    if (ptLog.length > 20) ptLog.pop();
+    log(`[Pinterest] ✅ Pin posted! ID: ${result.id} → ${board.name}`);
+  } catch(err) {
+    const entry = { time: new Date().toISOString(), error: err.message, topic: post.topic };
+    ptLog.unshift(entry);
+    if (ptLog.length > 20) ptLog.pop();
+    log(`[Pinterest] ❌ ${err.message}`);
+  }
+}
+
+async function fetchPinterestBoards() {
+  const result = await pinterestRequest('GET', '/boards?page_size=25');
+  if (result.items) {
+    log('\n=== PINTEREST BOARD IDs — ADD TO RAILWAY ===');
+    result.items.forEach(b => {
+      const key = b.name.toLowerCase().replace(/[^a-z0-9]+/g,'_').toUpperCase();
+      log(`PINTEREST_BOARD_${key} = ${b.id}  # ${b.name}`);
+    });
+    log('============================================\n');
+  }
+  return result;
+}
+// ── END PINTEREST MODULE ──────────────────────────────────────────────────────
+
 function log(msg) {
   const t = new Date().toISOString();
   const line = `[${t}] ${msg}`;
@@ -617,17 +792,26 @@ async function sendHourlyGroupEmail(postUrl, postTitle) {
   log(`📧 Email sent → ${group1.name} + ${group2.name}`);
 }
 
-log('OHG Pet Autopilot Server v6 starting...');
-log(`Posts: 62 | Groups: ${PET_GROUPS.length} | Interval: ${INTERVAL_MS/60000}min | Hours: ${ACTIVE_FROM}-${ACTIVE_TO} EST`);
+log('OHG Pet Autopilot Server v7 starting...');
+log(`FB Posts: 62 | Groups: ${PET_GROUPS.length} | Interval: ${INTERVAL_MS/60000}min | Hours: ${ACTIVE_FROM}-${ACTIVE_TO} EST`);
+log(`Pinterest: ${process.env.PINTEREST_TOKEN ? '✅ Token set' : '⚠️ No token — set PINTEREST_TOKEN in Railway'}`);
 log(`Token: ${FB_SYS_TOKEN?'SET len='+FB_SYS_TOKEN.length:'MISSING'} | Claude: ${CLAUDE_KEY?'SET':'MISSING'}`);
 log(`Email: ${process.env.RESEND_KEY?'✅ Resend → '+NOTIFY_EMAIL:'⚠️ RESEND_KEY not set'}`);
 
 fetchPageToken().then(() => {
-  log(`Scheduler ready — first post in 15s`);
+  log(`Scheduler ready — first FB post in 15s`);
   setTimeout(runPost, 15000);
   setInterval(runPost, INTERVAL_MS);
   setInterval(retryPendingGroupPosts, 4 * 3600000);
   setInterval(checkAndCommentFallback, 30 * 60000);
+
+  // Pinterest scheduler — first pin after 60s, then every 2.5 hours
+  setTimeout(() => {
+    log('[Pinterest] First pin firing...');
+    runPinterestScheduler();
+  }, 60000);
+  setInterval(runPinterestScheduler, PINTEREST_INTERVAL_MS);
+  log(`[Pinterest] Scheduler armed — posting every ${PINTEREST_INTERVAL_MS/3600000}hrs`);
 });
 
 // ── HTTP SERVER ───────────────────────────────────────────────────────────────
@@ -640,6 +824,42 @@ http.createServer((req, res) => {
     return;
   }
 
+  // Pinterest routes
+  if(req.url === '/pinterest/boards') {
+    fetchPinterestBoards()
+      .then(data => { res.writeHead(200,{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}); res.end(JSON.stringify(data, null, 2)); })
+      .catch(err => { res.writeHead(500,{'Content-Type':'application/json'}); res.end(JSON.stringify({error: err.message})); });
+    return;
+  }
+
+  if(req.url === '/pinterest/stats') {
+    res.writeHead(200,{'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+    res.end(JSON.stringify({
+      totalPins: ptPostCount,
+      lastPin: ptLastPost,
+      nextPost: PT_POSTS[ptIndex % PT_POSTS.length]?.topic,
+      log: ptLog,
+      boardsReady: Object.values(PT_BOARDS).filter(b => b.id).length,
+      totalBoards: Object.keys(PT_BOARDS).length,
+      totalPosts: PT_POSTS.length,
+      tokenSet: !!process.env.PINTEREST_TOKEN,
+    }));
+    return;
+  }
+
+  if(req.url === '/pinterest/post-now' && req.method === 'POST') {
+    runPinterestScheduler()
+      .then(() => { res.writeHead(200,{'Content-Type':'application/json'}); res.end(JSON.stringify({success:true, lastPin: ptLastPost})); })
+      .catch(err => { res.writeHead(500,{'Content-Type':'application/json'}); res.end(JSON.stringify({error: err.message})); });
+    return;
+  }
+
+  if(req.url && req.url.startsWith('/pinterest/callback')) {
+    res.writeHead(200,{'Content-Type':'text/html'});
+    res.end(`<html><body style="background:#0a0f0d;color:#2dff8e;font-family:Arial;padding:40px;text-align:center"><h2>Pinterest OAuth Callback</h2><pre>${JSON.stringify(Object.fromEntries(new URL('http://x'+req.url).searchParams),null,2)}</pre></body></html>`);
+    return;
+  }
+
   if(req.url === '/api/stats') {
     const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
     const nextPost = POSTS[postIndex%62];
@@ -648,28 +868,16 @@ http.createServer((req, res) => {
     const coolG   = PET_GROUPS.filter(g=>groupStats[g.id].cooldown&&!groupStats[g.id].permanent).length;
     const nextGroup = pickNextGroup()||PET_GROUPS[0];
     const payload = {
-      server:'OHG v6', time_est:est.toISOString(), is_active:isActiveHour(),
+      server:'OHG v7', time_est:est.toISOString(), is_active:isActiveHour(),
       post_index:postIndex%62+1, round:Math.floor(postIndex/62)+1,
       total_page:totalPosted, total_group:totalGroupPosted, total_comments:totalComments,
       pending_count:pendingGroupPosts.length, groups_total:PET_GROUPS.length,
       groups_active:activeG, groups_banned:bannedG, groups_cooldown:coolG,
       groups_used_cycle:postedGroupsThisCycle.size,
+      pinterest: { totalPins:ptPostCount, lastPin:ptLastPost, boardsReady:Object.values(PT_BOARDS).filter(b=>b.id).length },
       next_post:{id:nextPost.id, title:nextPost.title, cat:nextPost.cat},
       next_group:{id:nextGroup.id, name:nextGroup.name},
       page_token_ok: PAGE_TOKEN ? true : false,
-      group_stats: PET_GROUPS.map(g=>({
-        id:g.id, name:g.name,
-        success:groupStats[g.id].success,
-        fail:groupStats[g.id].fail,
-        cooldown:groupStats[g.id].cooldown,
-        permanent:groupStats[g.id].permanent||false,
-        is_next: nextGroup && g.id===nextGroup.id
-      })),
-      pending_posts: pendingGroupPosts.map(p=>({
-        title:p.title, group_name:p.groupName,
-        age_min:Math.round((Date.now()-p.postedAt)/60000),
-        commented:p.commentFired||false
-      })),
       recent_logs: logs.slice(0,60)
     };
     res.writeHead(200,{'Content-Type':'application/json','Access-Control-Allow-Origin':'*','Cache-Control':'no-cache'});
@@ -677,7 +885,7 @@ http.createServer((req, res) => {
     return;
   }
 
-  // ── NEW PREMIUM DASHBOARD ─────────────────────────────────────────────────
+  // ── DASHBOARD ─────────────────────────────────────────────────────────────
   const est = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
   const nextPost = POSTS[postIndex%62];
   const nextGroup = pickNextGroup()||PET_GROUPS[0];
@@ -685,13 +893,14 @@ http.createServer((req, res) => {
   const activeGroups = PET_GROUPS.filter(g=>!groupStats[g.id].permanent);
   const permanentGroups = PET_GROUPS.filter(g=>groupStats[g.id].permanent);
   const cooldownGroups = PET_GROUPS.filter(g=>groupStats[g.id].cooldown&&!groupStats[g.id].permanent);
+  const ptBoardsReady = Object.values(PT_BOARDS).filter(b=>b.id).length;
 
   const dashHtml = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>OHG Pet Autopilot v6</title>
+<title>OHG Pet Autopilot v7</title>
 <meta http-equiv="refresh" content="30">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;}
@@ -714,6 +923,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .val.green{color:#1a9e5c;}
 .val.amber{color:#c8900a;}
 .val.red{color:#e05555;}
+.pt-card{background:#0a0f1a;border:1px solid #1a2a3a;border-radius:10px;padding:14px 16px;margin-bottom:12px;}
+.pt-title{font-size:11px;color:#4a7aaa;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}
+.pt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}
+.pt-box{background:#0d1525;border-radius:8px;padding:10px;text-align:center;}
+.pt-val{font-size:20px;font-weight:600;color:#4a9ed4;}
+.pt-lbl{font-size:9px;color:#3a5a7a;margin-top:3px;}
 .card-title{font-size:11px;color:#5a8a6a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;display:flex;align-items:center;gap:6px;}
 .next-box{background:#0f3a1e;border:1px solid #1a4a26;border-radius:8px;padding:10px 12px;margin-bottom:10px;}
 .next-tag{font-size:9px;color:#1a9e5c;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}
@@ -723,14 +938,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .bar-fill{height:100%;border-radius:3px;transition:width .4s;}
 .bar-green{background:#1a9e5c;}
 .bar-amber{background:#c8900a;}
+.bar-blue{background:#4a9ed4;}
 .bar-label{display:flex;justify-content:space-between;font-size:10px;color:#5a8a6a;margin-bottom:10px;}
 .mini3{display:flex;gap:8px;margin-top:8px;}
 .mini-box{flex:1;background:#0f3a1e;border-radius:7px;padding:8px;text-align:center;}
 .mini-val{font-size:17px;font-weight:600;color:#1a9e5c;}
 .mini-lbl{font-size:9px;color:#5a8a6a;margin-top:2px;}
 .g-scroll{max-height:230px;overflow-y:auto;}
-.g-scroll::-webkit-scrollbar{width:3px;}
-.g-scroll::-webkit-scrollbar-thumb{background:#1a3020;border-radius:2px;}
 .g-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #0f1f14;}
 .g-row:last-child{border:none;}
 .g-num{font-size:10px;color:#2a4a32;min-width:22px;}
@@ -743,8 +957,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .b-next{background:#1a4a26;color:#2dff8e;border:1px solid #1a9e5c;}
 .b-used{background:#111f16;color:#3a5a44;}
 .log-wrap{max-height:200px;overflow-y:auto;font-family:monospace;font-size:11px;}
-.log-wrap::-webkit-scrollbar{width:3px;}
-.log-wrap::-webkit-scrollbar-thumb{background:#1a3020;border-radius:2px;}
 .log-line{padding:3px 0;border-bottom:1px solid #0c1810;color:#4a6a52;line-height:1.4;}
 .log-ok{color:#1a9e5c;}
 .log-err{color:#e05555;}
@@ -753,76 +965,47 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .foot{border-top:1px solid #1a3020;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}
 .foot a{color:#1a9e5c;font-size:11px;text-decoration:none;}
 .foot span{font-size:11px;color:#3a5a44;}
-.pending-card{background:#2a1010;border:1px solid #4a2020;border-radius:10px;padding:14px 16px;margin-bottom:12px;}
-.pending-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #3a1818;font-size:12px;}
-.pending-row:last-child{border:none;}
 </style>
 </head>
 <body>
-
 <div class="topbar">
   <div class="logo">🐾</div>
   <div>
-    <div class="logo-title">OHG Pet Autopilot <span style="font-size:11px;color:#1a9e5c;background:#0f3a1e;padding:2px 8px;border-radius:4px;margin-left:6px;">v6</span></div>
+    <div class="logo-title">OHG Pet Autopilot <span style="font-size:11px;color:#1a9e5c;background:#0f3a1e;padding:2px 8px;border-radius:4px;margin-left:6px;">v7</span></div>
     <div class="logo-sub">${est.toLocaleString('en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})} EST &nbsp;·&nbsp; Auto-refresh 30s</div>
   </div>
-  <div class="live-pill">
-    <div class="dot"></div>
-    <span>${isActiveHour() ? 'Active' : 'Sleeping'}</span>
-  </div>
+  <div class="live-pill"><div class="dot"></div><span>${isActiveHour() ? 'Active' : 'Sleeping'}</span></div>
 </div>
-
 <div class="main">
-
   <div class="grid4">
-    <div class="card">
-      <div class="label">Page posts</div>
-      <div class="val green">${totalPosted}</div>
-      <div class="sub">Total published</div>
+    <div class="card"><div class="label">Page posts</div><div class="val green">${totalPosted}</div><div class="sub">Total published</div></div>
+    <div class="card"><div class="label">Group posts</div><div class="val">${totalGroupPosted}</div><div class="sub">Auto-distributed</div></div>
+    <div class="card"><div class="label">Comments</div><div class="val">${totalComments}</div><div class="sub">Viral fallback</div></div>
+    <div class="card"><div class="label">Pending review</div><div class="val ${pendingGroupPosts.length > 0 ? 'amber' : 'green'}">${pendingGroupPosts.length}</div><div class="sub">Awaiting FB approval</div></div>
+  </div>
+
+  <div class="pt-card">
+    <div class="pt-title">📌 Pinterest Autopilot</div>
+    <div class="pt-grid">
+      <div class="pt-box"><div class="pt-val">${ptPostCount}</div><div class="pt-lbl">Pins posted</div></div>
+      <div class="pt-box"><div class="pt-val">${ptBoardsReady}<span style="font-size:12px;color:#3a5a7a;">/${Object.keys(PT_BOARDS).length}</span></div><div class="pt-lbl">Boards ready</div></div>
+      <div class="pt-box"><div class="pt-val">${PT_POSTS.length}</div><div class="pt-lbl">Posts in rotation</div></div>
+      <div class="pt-box"><div class="pt-val" style="font-size:14px;">${process.env.PINTEREST_TOKEN ? '✅' : '⚠️'}</div><div class="pt-lbl">${process.env.PINTEREST_TOKEN ? 'Token set' : 'No token'}</div></div>
     </div>
-    <div class="card">
-      <div class="label">Group posts</div>
-      <div class="val">${totalGroupPosted}</div>
-      <div class="sub">Auto-distributed</div>
-    </div>
-    <div class="card">
-      <div class="label">Comments</div>
-      <div class="val">${totalComments}</div>
-      <div class="sub">Viral fallback</div>
-    </div>
-    <div class="card">
-      <div class="label">Pending review</div>
-      <div class="val ${pendingGroupPosts.length > 0 ? 'amber' : 'green'}">${pendingGroupPosts.length}</div>
-      <div class="sub">Awaiting FB approval</div>
-    </div>
+    ${ptLastPost ? `<div style="margin-top:10px;padding:8px 10px;background:#0d1525;border-radius:6px;font-size:11px;color:#4a7aaa;">✅ Last pin: <span style="color:#a0c0d8;">${ptLastPost.topic}</span> → ${ptLastPost.board}</div>` : `<div style="margin-top:10px;padding:8px 10px;background:#0d1525;border-radius:6px;font-size:11px;color:#3a5a7a;">⏳ No pins posted yet — ${ptBoardsReady === 0 ? 'add board IDs to Railway vars' : 'waiting for next interval'}</div>`}
+    <div style="margin-top:8px;font-size:10px;color:#3a5a7a;">Posts every 2.5hrs · <a href="/pinterest/boards" style="color:#4a7aaa;text-decoration:none;">Get board IDs →</a> · <a href="/pinterest/stats" style="color:#4a7aaa;text-decoration:none;">Stats →</a></div>
   </div>
 
   <div class="grid4">
-    <div class="card">
-      <div class="label">Post index</div>
-      <div class="val">${postIndex%62+1}<span style="font-size:14px;color:#5a8a6a;">/62</span></div>
-      <div class="sub">Round ${round}</div>
-    </div>
-    <div class="card">
-      <div class="label">Active groups</div>
-      <div class="val green">${activeGroups.length}</div>
-      <div class="sub">${permanentGroups.length} banned · ${cooldownGroups.length} cooldown</div>
-    </div>
-    <div class="card">
-      <div class="label">Used this cycle</div>
-      <div class="val">${postedGroupsThisCycle.size}</div>
-      <div class="sub">of 51 groups</div>
-    </div>
-    <div class="card">
-      <div class="label">Page token</div>
-      <div class="val" style="font-size:20px;">${PAGE_TOKEN ? '✅' : '⚠️'}</div>
-      <div class="sub">${PAGE_TOKEN ? 'Connected' : 'Missing'}</div>
-    </div>
+    <div class="card"><div class="label">Post index</div><div class="val">${postIndex%62+1}<span style="font-size:14px;color:#5a8a6a;">/62</span></div><div class="sub">Round ${round}</div></div>
+    <div class="card"><div class="label">Active groups</div><div class="val green">${activeGroups.length}</div><div class="sub">${permanentGroups.length} banned · ${cooldownGroups.length} cooldown</div></div>
+    <div class="card"><div class="label">Used this cycle</div><div class="val">${postedGroupsThisCycle.size}</div><div class="sub">of 51 groups</div></div>
+    <div class="card"><div class="label">Page token</div><div class="val" style="font-size:20px;">${PAGE_TOKEN ? '✅' : '⚠️'}</div><div class="sub">${PAGE_TOKEN ? 'Connected' : 'Missing'}</div></div>
   </div>
 
   <div class="grid2">
     <div class="card">
-      <div class="card-title">Next scheduled post</div>
+      <div class="card-title">Next scheduled FB post</div>
       <div class="next-box">
         <div class="next-tag">P${String(nextPost.id).padStart(2,'0')} &nbsp;·&nbsp; ${nextPost.cat}</div>
         <div class="next-title">${nextPost.title}</div>
@@ -833,34 +1016,20 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="card">
       <div class="card-title">Cycle progress</div>
       <div class="bar-wrap"><div class="bar-fill bar-green" style="width:${Math.round(((postIndex%62+1)/62)*100)}%"></div></div>
-      <div class="bar-label"><span>Posts cycle</span><span>${Math.round(((postIndex%62+1)/62)*100)}%</span></div>
-      <div class="bar-wrap"><div class="bar-fill bar-amber" style="width:${Math.round((postedGroupsThisCycle.size/51)*100)}%"></div></div>
-      <div class="bar-label"><span>Groups used</span><span>${Math.round((postedGroupsThisCycle.size/51)*100)}%</span></div>
+      <div class="bar-label"><span>FB posts cycle</span><span>${Math.round(((postIndex%62+1)/62)*100)}%</span></div>
+      <div class="bar-wrap"><div class="bar-fill bar-blue" style="width:${Math.round((ptPostCount/PT_POSTS.length)*100)}%"></div></div>
+      <div class="bar-label"><span>Pinterest cycle</span><span>${Math.round((ptPostCount/PT_POSTS.length)*100)}%</span></div>
       <div class="mini3">
-        <div class="mini-box"><div class="mini-val">62</div><div class="mini-lbl">Posts</div></div>
-        <div class="mini-box"><div class="mini-val">51</div><div class="mini-lbl">Groups</div></div>
+        <div class="mini-box"><div class="mini-val">62</div><div class="mini-lbl">FB Posts</div></div>
+        <div class="mini-box"><div class="mini-val">${PT_POSTS.length}</div><div class="mini-lbl">PT Posts</div></div>
         <div class="mini-box" style="background:#1a2e10;"><div class="mini-val" style="color:#c8900a;">R${round}</div><div class="mini-lbl">Round</div></div>
       </div>
     </div>
   </div>
 
-  ${pendingGroupPosts.length > 0 ? `
-  <div class="pending-card">
-    <div class="card-title" style="color:#c8900a;margin-bottom:10px;">⏳ Pending admin approval (${pendingGroupPosts.length})</div>
-    ${pendingGroupPosts.map(p=>{
-      const ageH = (Math.round((Date.now()-p.postedAt)/360000)/10);
-      return `<div class="pending-row">
-        <span style="flex:1;color:#c0a080;">${p.title.substring(0,40)}</span>
-        <span style="color:#5a8a6a;">${p.groupName}</span>
-        <span style="color:${ageH>48?'#e05555':'#c8900a'};margin-left:8px;">${ageH}h</span>
-        <span style="margin-left:8px;">${p.commentFired?'<span style="color:#4a9ed4">💬 commented</span>':'<span style="color:#c8900a">⏳ waiting</span>'}</span>
-      </div>`;
-    }).join('')}
-  </div>` : ''}
-
   <div class="card" style="margin-bottom:12px;">
     <div class="card-title">Group rotation — ${PET_GROUPS.length} groups
-      <span style="margin-left:auto;font-size:10px;background:#0f3a1e;color:#1a9e5c;padding:2px 8px;border-radius:4px;">${activeGroups.length} ready · ${permanentGroups.length} banned · ${cooldownGroups.length} cooldown</span>
+      <span style="margin-left:auto;font-size:10px;background:#0f3a1e;color:#1a9e5c;padding:2px 8px;border-radius:4px;">${activeGroups.length} ready · ${permanentGroups.length} banned</span>
     </div>
     <div class="g-scroll">
       ${PET_GROUPS.map((g,i)=>{
@@ -880,16 +1049,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 
   <div class="card" style="margin-bottom:16px;">
-    <div class="card-title">Deploy logs
-      <span style="margin-left:auto;font-size:10px;color:#3a5a44;">${logs.length} entries</span>
-    </div>
+    <div class="card-title">Deploy logs <span style="margin-left:auto;font-size:10px;color:#3a5a44;">${logs.length} entries</span></div>
     <div class="log-wrap">
       ${logs.slice(0,60).map(l=>{
         let cls = 'log-line';
         if(l.includes('✅')||l.includes('SUCCESS')) cls += ' log-ok';
         else if(l.includes('❌')||l.includes('ERROR')) cls += ' log-err';
         else if(l.includes('⚠️')||l.includes('🚫')||l.includes('SKIP')) cls += ' log-warn';
-        else if(l.includes('🔄')||l.includes('🔍')||l.includes('📧')||l.includes('💬')) cls += ' log-info';
+        else if(l.includes('[Pinterest]')||l.includes('📧')||l.includes('🔄')) cls += ' log-info';
         const ts = l.match(/\[([\d\-T:.Z]+)\]/);
         const msg = ts ? l.replace(ts[0],'').trim() : l;
         const time = ts ? new Date(ts[1]).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '';
@@ -897,15 +1064,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       }).join('')}
     </div>
   </div>
-
 </div>
-
 <div class="foot">
   <a href="https://onehealthglobe.com" target="_blank">onehealthglobe.com</a>
-  <span>OHG Pet Autopilot v6 · 62 posts · 51 groups · 24/7</span>
+  <span>OHG v7 · FB 62 posts · Pinterest ${PT_POSTS.length} posts · 24/7</span>
   <a href="/api/stats" target="_blank">API stats →</a>
 </div>
-
 </body></html>`;
 
   res.writeHead(200,{'Content-Type':'text/html'});
