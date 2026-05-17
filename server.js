@@ -339,8 +339,9 @@ function pinterestRequest(method, path, body) {
     const token = process.env.PINTEREST_TOKEN;
     if (!token) return reject(new Error('PINTEREST_TOKEN not set'));
     const data = body ? JSON.stringify(body) : null;
+    const isSandbox = !(process.env.PINTEREST_STANDARD === 'true');
     const options = {
-      hostname: 'api.pinterest.com',
+      hostname: isSandbox ? 'api-sandbox.pinterest.com' : 'api.pinterest.com',
       path: `/v5${path}`,
       method,
       headers: {
