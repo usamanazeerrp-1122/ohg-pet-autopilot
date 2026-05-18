@@ -9,7 +9,7 @@ const CLAUDE_KEY   = (process.env.CLAUDE_KEY || '').trim().replace(/['"]/g,'');
 const GROUP_TOKEN  = (process.env.GROUP_TOKEN || process.env.FB_TOKEN || '').trim().replace(/['"]/g,'');
 const BASE_URL     = (process.env.BASE_URL || 'https://onehealthglobe.com').trim().replace(/['"]/g,'');
 const UTM_CAMP     = (process.env.UTM_CAMP || 'pet_daily').trim().replace(/['"]/g,'');
-const INTERVAL_MS  = parseInt((process.env.INTERVAL_MS || '3600000').replace(/['"]/g,''));
+const INTERVAL_MS  = parseInt((process.env.INTERVAL_MS || '10800000').replace(/['"]/g,''));
 const ACTIVE_FROM  = parseInt((process.env.ACTIVE_FROM || '0').replace(/['"]/g,''));
 const ACTIVE_TO    = parseInt((process.env.ACTIVE_TO || '23').replace(/['"]/g,''));
 const NOTIFY_EMAIL = (process.env.NOTIFY_EMAIL || 'usamanazeerrp1@gmail.com').trim();
@@ -408,6 +408,44 @@ async function generateCaption(post, style) {
   return data.content[0].text.trim();
 }
 
+async function generateImagePrompt(post, style) {
+  const prompt = `You are a professional photography art director for a premium pet care brand (onehealthglobe.com).
+Generate a Pollinations.ai image prompt for this Facebook post topic.
+
+Post title: "${post.title}"
+Category: ${post.cat}
+Style: ${style}
+
+Rules for the prompt:
+- Describe ONE single scene only — no collage, no split panels
+- All subjects FULLY in frame — never cut off faces, heads, or bodies
+- Subjects centered and properly composed with breathing room around edges
+- Photorealistic, National Geographic quality, natural lighting
+- If humans: faces fully visible, natural expressions, camera-facing
+- If animals: full body visible OR head fully in frame with clear eyes
+- If products: sharp focus, white or neutral background, studio lighting
+- NO text overlay, NO watermarks, NO distorted anatomy
+- Ultra sharp focus, 4K professional photography
+- Always end with: single scene, centered composition, full subject in frame, professional photography
+
+Return ONLY the image description — no preamble, no quotes, no extra text. Max 200 words.`;
+
+  const body = JSON.stringify({ model:"claude-sonnet-4-5", max_tokens:300, messages:[{role:"user",content:prompt}] });
+  const options = { hostname:'api.anthropic.com', path:'/v1/messages', method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':CLAUDE_KEY,'anthropic-version':'2023-06-01','Content-Length':Buffer.byteLength(body)} };
+  try {
+    const data = await apiRequest(options, body);
+    if(data.error) throw new Error(data.error.message);
+    const generatedPrompt = data.content[0].text.trim();
+    log(`🎨 Image prompt generated (${generatedPrompt.length} chars)`);
+    return generatedPrompt;
+  } catch(e) {
+    log(`🎨 Prompt generation failed: ${e.message} — using fallback`);
+    return post.imgPrompt; // fallback to static prompt
+  }
+}
+
+
 function buildImageUrl(prompt, seed) {
   const fullPrompt = prompt + IMG_SUFFIX;
   const encoded = encodeURIComponent(fullPrompt);
@@ -518,8 +556,10 @@ async function runPost() {
   const post = POSTS[idx];
   const style = STYLES[styleIndex % 5];
   const utm = buildUTM(post);
-  const seed = post.id * 137 + styleIndex * 31;
-  const imageUrl = buildImageUrl(post.imgPrompt, seed);
+  // Generate fresh Claude image prompt for this post/style combination
+  const dynamicPrompt = await generateImagePrompt(post, style);
+  const seed = Date.now() % 999999; // random seed each time for variety
+  const imageUrl = buildImageUrl(dynamicPrompt, seed);
   if(idx === 0 && postIndex > 0) { postedGroupsThisCycle.clear(); log(`🔄 New round ${round} — group cycle reset`); }
   log(`━━━ P${String(post.id).padStart(2,'0')} [Round ${round}] | Next group: ${pickNextGroup()?.name||'none'}`);
   log(`Title: ${post.title}`);
@@ -684,7 +724,7 @@ async function sendHourlyGroupEmail(postUrl, postTitle) {
   log(`📧 Email sent → ${group1.name} + ${group2.name}`);
 }
 
-log('OHG Pet Autopilot Server v7.5 starting — page token via page endpoint, groups disabled...');
+log('OHG Pet Autopilot Server v7.7 starting — Claude dynamic image prompts, 3hr interval, groups disabled...');
 log(`FB Posts: 62 | Groups: ${PET_GROUPS.length} | Interval: ${INTERVAL_MS/60000}min | Hours: ${ACTIVE_FROM}-${ACTIVE_TO} EST`);
 log(`Pinterest: ${process.env.PINTEREST_TOKEN ? '✅ Token set' : '⚠️ No token'}`);
 log(`Token: ${FB_SYS_TOKEN?'SET len='+FB_SYS_TOKEN.length:'MISSING'} | Claude: ${CLAUDE_KEY?'SET':'MISSING'}`);
@@ -852,7 +892,7 @@ http.createServer(async (req, res) => {
     const coolG = PET_GROUPS.filter(g=>groupStats[g.id].cooldown&&!groupStats[g.id].permanent).length;
     const nextGroup = pickNextGroup()||PET_GROUPS[0];
     const payload = {
-      server:'OHG v7.5', time_est:est.toISOString(), is_active:isActiveHour(),
+      server:'OHG v7.7', time_est:est.toISOString(), is_active:isActiveHour(),
       post_index:postIndex%62+1, round:Math.floor(postIndex/62)+1,
       total_page:totalPosted, total_group:totalGroupPosted, total_comments:totalComments,
       pending_count:pendingGroupPosts.length, groups_total:PET_GROUPS.length,
@@ -882,12 +922,12 @@ http.createServer(async (req, res) => {
   const ptBoardsReady = Object.values(PT_BOARDS).filter(b=>b.id).length;
   const tokenOk = !lastTokenError;
 
-  const dashHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>OHG Pet Autopilot v7.5</title><meta http-equiv="refresh" content="30">
+  const dashHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>OHG Pet Autopilot v7.7</title><meta http-equiv="refresh" content="30">
 <style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0b1a0f;color:#e2f0e6;min-height:100vh;font-size:13px;}.topbar{background:#0d1f13;border-bottom:1px solid #1a3020;padding:14px 20px;display:flex;align-items:center;gap:12px;}.logo{width:38px;height:38px;background:#1a9e5c;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}.logo-title{font-size:15px;font-weight:600;color:#e2f0e6;}.logo-sub{font-size:11px;color:#5a8a6a;margin-top:1px;}.live-pill{background:#0f3a1e;border:1px solid #1a9e5c;border-radius:20px;padding:4px 12px;display:flex;align-items:center;gap:6px;margin-left:auto;}.dot{width:7px;height:7px;border-radius:50%;background:#1a9e5c;animation:blink 2s infinite;}@keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}.live-pill span{font-size:11px;color:#1a9e5c;font-weight:600;}.main{padding:16px 20px;max-width:1200px;margin:0 auto;}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}.card{background:#0d1f13;border:1px solid #1a3020;border-radius:10px;padding:14px 16px;}.label{font-size:10px;color:#5a8a6a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}.val{font-size:26px;font-weight:600;color:#e2f0e6;line-height:1;}.sub{font-size:11px;color:#5a8a6a;margin-top:4px;}.val.green{color:#1a9e5c;}.val.amber{color:#c8900a;}.val.red{color:#e05555;}.alert-card{background:#1a0808;border:1px solid #5a2020;border-radius:10px;padding:14px 16px;margin-bottom:12px;}.alert-title{font-size:12px;color:#e05555;font-weight:700;margin-bottom:6px;}.alert-msg{font-size:11px;color:#c08080;line-height:1.6;}.pt-card{background:#0a0f1a;border:1px solid #1a2a3a;border-radius:10px;padding:14px 16px;margin-bottom:12px;}.pt-title{font-size:11px;color:#4a7aaa;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}.pt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}.pt-box{background:#0d1525;border-radius:8px;padding:10px;text-align:center;}.pt-val{font-size:20px;font-weight:600;color:#4a9ed4;}.pt-lbl{font-size:9px;color:#3a5a7a;margin-top:3px;}.card-title{font-size:11px;color:#5a8a6a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;display:flex;align-items:center;gap:6px;}.next-box{background:#0f3a1e;border:1px solid #1a4a26;border-radius:8px;padding:10px 12px;margin-bottom:10px;}.next-tag{font-size:9px;color:#1a9e5c;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}.next-title{font-size:13px;color:#e2f0e6;font-weight:500;line-height:1.4;}.next-meta{font-size:11px;color:#5a8a6a;margin-top:4px;}.bar-wrap{background:#1a3020;border-radius:3px;height:5px;overflow:hidden;margin-bottom:5px;}.bar-fill{height:100%;border-radius:3px;}.bar-green{background:#1a9e5c;}.bar-blue{background:#4a9ed4;}.bar-label{display:flex;justify-content:space-between;font-size:10px;color:#5a8a6a;margin-bottom:10px;}.mini3{display:flex;gap:8px;margin-top:8px;}.mini-box{flex:1;background:#0f3a1e;border-radius:7px;padding:8px;text-align:center;}.mini-val{font-size:17px;font-weight:600;color:#1a9e5c;}.mini-lbl{font-size:9px;color:#5a8a6a;margin-top:2px;}.g-scroll{max-height:200px;overflow-y:auto;}.g-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #0f1f14;}.g-row:last-child{border:none;}.g-num{font-size:10px;color:#2a4a32;min-width:22px;}.g-name{flex:1;font-size:12px;color:#a0c0a8;}.g-id{font-size:9px;color:#2a4a32;font-family:monospace;}.badge{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600;white-space:nowrap;}.b-ok{background:#0f3a1e;color:#1a9e5c;}.b-ban{background:#2a1010;color:#7a3535;}.b-cool{background:#2a1f08;color:#8a6018;}.b-next{background:#1a4a26;color:#2dff8e;border:1px solid #1a9e5c;}.b-used{background:#111f16;color:#3a5a44;}.log-wrap{max-height:200px;overflow-y:auto;font-family:monospace;font-size:11px;}.log-line{padding:3px 0;border-bottom:1px solid #0c1810;color:#4a6a52;line-height:1.4;}.log-ok{color:#1a9e5c;}.log-err{color:#e05555;}.log-warn{color:#c8900a;}.log-info{color:#4a9ed4;}.proxy-card{background:#0a1520;border:1px solid #1a3a50;border-radius:10px;padding:14px 16px;margin-bottom:12px;}.proxy-title{font-size:11px;color:#4a9ed4;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}.foot{border-top:1px solid #1a3020;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}.foot a{color:#1a9e5c;font-size:11px;text-decoration:none;}.foot span{font-size:11px;color:#3a5a44;}</style></head>
 <body>
 <div class="topbar">
   <div class="logo">🐾</div>
-  <div><div class="logo-title">OHG Pet Autopilot <span style="font-size:11px;color:#1a9e5c;background:#0f3a1e;padding:2px 8px;border-radius:4px;margin-left:6px;">v7.5</span></div>
+  <div><div class="logo-title">OHG Pet Autopilot <span style="font-size:11px;color:#1a9e5c;background:#0f3a1e;padding:2px 8px;border-radius:4px;margin-left:6px;">v7.7</span></div>
   <div class="logo-sub">${est.toLocaleString('en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})} EST &nbsp;·&nbsp; Auto-refresh 30s</div></div>
   <div class="live-pill"><div class="dot"></div><span>${isActiveHour() ? 'Active' : 'Sleeping'}</span></div>
 </div>
@@ -977,7 +1017,7 @@ http.createServer(async (req, res) => {
 </div>
 <div class="foot">
   <a href="https://onehealthglobe.com" target="_blank">onehealthglobe.com</a>
-  <span>OHG v7.5 · FB 62 posts · Pinterest ${PT_POSTS.length} posts · Claude Proxy ✅</span>
+  <span>OHG v7.7 · FB 62 posts · Pinterest ${PT_POSTS.length} posts · Claude Proxy ✅</span>
   <a href="/api/stats" target="_blank">API stats →</a>
 </div></body></html>`;
 
