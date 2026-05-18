@@ -1146,8 +1146,8 @@ html,body{height:100%;overflow:hidden;font-family:'Sora',sans-serif;font-size:13
     </div>
   </div>
   <div class="topbar-center">
-    <button class="nav-tab active" onclick="switchPage('autopilot',this)">⚡ Autopilot</button>
-    <button class="nav-tab" onclick="switchPage('content',this)">✦ Content Manager</button>
+    <button class="nav-tab active" id="nav-autopilot" onclick="switchPage('autopilot')">⚡ Autopilot</button>
+    <button class="nav-tab" id="nav-content" onclick="switchPage('content')">✦ Content Manager</button>
   </div>
   <div class="topbar-right">
     <div class="status-pill">
@@ -1410,12 +1410,12 @@ html,body{height:100%;overflow:hidden;font-family:'Sora',sans-serif;font-size:13
 'use strict';
 
 // ── PAGE SWITCHER ──────────────────────────────────────────────────────────
-function switchPage(id, btn) {
+function switchPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + id).classList.add('active');
-  btn.classList.add('active');
-  if (id === 'content') { checkConn(); }
+  document.getElementById('nav-' + id).classList.add('active');
+  if (id === 'content') { checkConn(); updateUI(); }
 }
 
 // ── CM CONFIG ──────────────────────────────────────────────────────────────
