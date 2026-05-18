@@ -1392,9 +1392,15 @@ async function runCycle() {
   const prompt='You are a USA pet health SEO content strategist for One Health Globe (onehealthglobe.com).\nDomain Rating 0 — target ONLY low-competition, long-tail keywords.\n\nAlready published: '+OHG_PUBLISHED.join(', ')+'\nDO NOT suggest: '+usedTitles+'\nGap list: '+gapSample+'\n\nToday: '+new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'\n\nUse web search. Pick ONE topic: NOT on OHG, KD under 20, USA pet owners, informational intent.\n\nReply ONLY in this JSON (no markdown):\n{"title":"...","keywords":["primary","secondary","long tail"],"rationale":"2 sentences.","difficulty":"low","intent":"informational"}';
   try {
     const text=await callClaude([{role:'user',content:prompt}],true);
-    const m=text.replace(/\`\`\`json|\`\`\`/g,'').match(/\{[\s\S]*?\}/);
-    if(!m) throw new Error('No JSON: '+text.substring(0,200));
-    const topic=JSON.parse(m[0]);
+    let topic;
+    try {
+      const clean=text.replace(/\`\`\`[\s\S]*?\`\`\`/g,'').replace(/\`\`\`/g,'').trim();
+      const start=clean.indexOf('{');const end=clean.lastIndexOf('}');
+      if(start<0||end<0) throw new Error('No JSON braces found');
+      topic=JSON.parse(clean.slice(start,end+1));
+    } catch(parseErr) {
+      throw new Error('JSON parse failed: '+parseErr.message+' | Raw: '+text.substring(0,300));
+    }
     if(!topic.title||!Array.isArray(topic.keywords)) throw new Error('Invalid format');
     topic.status='pending';topic.date=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
     topic.id=Date.now();topic.cycleNum=S.totalCycles+1;topic.hasArticle=false;
