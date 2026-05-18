@@ -1146,8 +1146,8 @@ html,body{height:100%;overflow:hidden;font-family:'Sora',sans-serif;font-size:13
     </div>
   </div>
   <div class="topbar-center">
-    <button class="nav-tab active" id="nav-autopilot" onclick="switchPage('autopilot')">⚡ Autopilot</button>
-    <button class="nav-tab" id="nav-content" onclick="switchPage('content')">✦ Content Manager</button>
+    <button class="nav-tab active" id="nav-autopilot" data-page="autopilot" onclick="switchPage(this.dataset.page)">⚡ Autopilot</button>
+    <button class="nav-tab" id="nav-content" data-page="content" onclick="switchPage(this.dataset.page)">✦ Content Manager</button>
   </div>
   <div class="topbar-right">
     <div class="status-pill">
@@ -1737,7 +1737,8 @@ function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').
 function set(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
 
 // AUTO REFRESH AUTOPILOT every 30s
-setInterval(()=>{ if(document.getElementById('page-autopilot').classList.contains('active')) location.reload(); }, 30000);
+// Auto-reload disabled — causes tab reset issues
+// Use manual refresh or API polling instead
 
 init();
 </script>
