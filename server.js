@@ -922,107 +922,831 @@ http.createServer(async (req, res) => {
   const ptBoardsReady = Object.values(PT_BOARDS).filter(b=>b.id).length;
   const tokenOk = !lastTokenError;
 
-  const dashHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>OHG Pet Autopilot v7.7</title><meta http-equiv="refresh" content="30">
-<style>*{box-sizing:border-box;margin:0;padding:0;}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0b1a0f;color:#e2f0e6;min-height:100vh;font-size:13px;}.topbar{background:#0d1f13;border-bottom:1px solid #1a3020;padding:14px 20px;display:flex;align-items:center;gap:12px;}.logo{width:38px;height:38px;background:#1a9e5c;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}.logo-title{font-size:15px;font-weight:600;color:#e2f0e6;}.logo-sub{font-size:11px;color:#5a8a6a;margin-top:1px;}.live-pill{background:#0f3a1e;border:1px solid #1a9e5c;border-radius:20px;padding:4px 12px;display:flex;align-items:center;gap:6px;margin-left:auto;}.dot{width:7px;height:7px;border-radius:50%;background:#1a9e5c;animation:blink 2s infinite;}@keyframes blink{0%,100%{opacity:1;}50%{opacity:.35;}}.live-pill span{font-size:11px;color:#1a9e5c;font-weight:600;}.main{padding:16px 20px;max-width:1200px;margin:0 auto;}.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px;}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}.card{background:#0d1f13;border:1px solid #1a3020;border-radius:10px;padding:14px 16px;}.label{font-size:10px;color:#5a8a6a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:6px;}.val{font-size:26px;font-weight:600;color:#e2f0e6;line-height:1;}.sub{font-size:11px;color:#5a8a6a;margin-top:4px;}.val.green{color:#1a9e5c;}.val.amber{color:#c8900a;}.val.red{color:#e05555;}.alert-card{background:#1a0808;border:1px solid #5a2020;border-radius:10px;padding:14px 16px;margin-bottom:12px;}.alert-title{font-size:12px;color:#e05555;font-weight:700;margin-bottom:6px;}.alert-msg{font-size:11px;color:#c08080;line-height:1.6;}.pt-card{background:#0a0f1a;border:1px solid #1a2a3a;border-radius:10px;padding:14px 16px;margin-bottom:12px;}.pt-title{font-size:11px;color:#4a7aaa;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;}.pt-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;}.pt-box{background:#0d1525;border-radius:8px;padding:10px;text-align:center;}.pt-val{font-size:20px;font-weight:600;color:#4a9ed4;}.pt-lbl{font-size:9px;color:#3a5a7a;margin-top:3px;}.card-title{font-size:11px;color:#5a8a6a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:12px;display:flex;align-items:center;gap:6px;}.next-box{background:#0f3a1e;border:1px solid #1a4a26;border-radius:8px;padding:10px 12px;margin-bottom:10px;}.next-tag{font-size:9px;color:#1a9e5c;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px;}.next-title{font-size:13px;color:#e2f0e6;font-weight:500;line-height:1.4;}.next-meta{font-size:11px;color:#5a8a6a;margin-top:4px;}.bar-wrap{background:#1a3020;border-radius:3px;height:5px;overflow:hidden;margin-bottom:5px;}.bar-fill{height:100%;border-radius:3px;}.bar-green{background:#1a9e5c;}.bar-blue{background:#4a9ed4;}.bar-label{display:flex;justify-content:space-between;font-size:10px;color:#5a8a6a;margin-bottom:10px;}.mini3{display:flex;gap:8px;margin-top:8px;}.mini-box{flex:1;background:#0f3a1e;border-radius:7px;padding:8px;text-align:center;}.mini-val{font-size:17px;font-weight:600;color:#1a9e5c;}.mini-lbl{font-size:9px;color:#5a8a6a;margin-top:2px;}.g-scroll{max-height:200px;overflow-y:auto;}.g-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #0f1f14;}.g-row:last-child{border:none;}.g-num{font-size:10px;color:#2a4a32;min-width:22px;}.g-name{flex:1;font-size:12px;color:#a0c0a8;}.g-id{font-size:9px;color:#2a4a32;font-family:monospace;}.badge{font-size:9px;padding:2px 7px;border-radius:4px;font-weight:600;white-space:nowrap;}.b-ok{background:#0f3a1e;color:#1a9e5c;}.b-ban{background:#2a1010;color:#7a3535;}.b-cool{background:#2a1f08;color:#8a6018;}.b-next{background:#1a4a26;color:#2dff8e;border:1px solid #1a9e5c;}.b-used{background:#111f16;color:#3a5a44;}.log-wrap{max-height:200px;overflow-y:auto;font-family:monospace;font-size:11px;}.log-line{padding:3px 0;border-bottom:1px solid #0c1810;color:#4a6a52;line-height:1.4;}.log-ok{color:#1a9e5c;}.log-err{color:#e05555;}.log-warn{color:#c8900a;}.log-info{color:#4a9ed4;}.proxy-card{background:#0a1520;border:1px solid #1a3a50;border-radius:10px;padding:14px 16px;margin-bottom:12px;}.proxy-title{font-size:11px;color:#4a9ed4;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}.foot{border-top:1px solid #1a3020;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;}.foot a{color:#1a9e5c;font-size:11px;text-decoration:none;}.foot span{font-size:11px;color:#3a5a44;}</style></head>
+  const dashHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>OHG Command Center</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐾</text></svg>">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Sora:wght@400;500;600&display=swap');
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#070d0a;--s1:#0d1610;--s2:#111e14;--s3:#162419;
+  --border:#1e3025;--border2:#243b2e;
+  --green:#00e5a0;--green2:#00c48a;--blue:#3d8bff;--red:#ff5252;--amber:#f5a623;--purple:#a78bfa;
+  --text:#d4e8dc;--muted:#4a7060;--muted2:#2a4a38;
+}
+html,body{height:100%;overflow:hidden;font-family:'Sora',sans-serif;font-size:13px;background:var(--bg);color:var(--text)}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--s1);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:16px}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-icon{width:34px;height:34px;background:linear-gradient(135deg,#0b3020,#00e5a030);border:1px solid var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:17px}
+.brand-name{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:var(--green);letter-spacing:0.05em}
+.brand-sub{font-size:9px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase}
+.topbar-center{display:flex;gap:2px}
+.nav-tab{padding:6px 14px;border-radius:6px;font-size:11px;font-family:'DM Mono',monospace;color:var(--muted);cursor:pointer;border:none;background:transparent;transition:all 0.15s;letter-spacing:0.05em}
+.nav-tab:hover{color:var(--text);background:var(--s2)}
+.nav-tab.active{color:var(--green);background:#00e5a010;border:1px solid #00e5a025}
+.topbar-right{display:flex;align-items:center;gap:12px;font-size:11px;font-family:'DM Mono',monospace}
+.status-pill{display:flex;align-items:center;gap:5px;padding:4px 10px;background:var(--s2);border:1px solid var(--border);border-radius:20px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 2s infinite;flex-shrink:0}
+.dot.r{background:var(--red)}.dot.a{background:var(--amber)}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
+
+/* ── LAYOUT ── */
+.app{display:flex;flex-direction:column;height:100vh}
+.page{display:none;flex:1;overflow:hidden}
+.page.active{display:flex}
+
+/* ══════════════ AUTOPILOT PAGE ══════════════ */
+.ap-layout{display:grid;grid-template-columns:220px 1fr;height:100%;overflow:hidden}
+.ap-sidebar{background:var(--s1);border-right:1px solid var(--border);padding:16px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:10px}
+.ap-content{overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:14px}
+
+/* stat cards */
+.sc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.sc{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.sc-val{font-size:22px;font-weight:600;font-family:'DM Mono',monospace;line-height:1}
+.sc-val.g{color:var(--green)}.sc-val.b{color:var(--blue)}.sc-val.a{color:var(--amber)}.sc-val.r{color:var(--red)}
+.sc-lbl{font-size:9px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:0.08em}
+
+/* sidebar sections */
+.slabel{font-size:9px;font-family:'DM Mono',monospace;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase;margin-bottom:4px;margin-top:4px}
+.sdiv{height:1px;background:var(--border);margin:4px 0}
+
+/* cards in content area */
+.card{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+.card-title{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+
+/* next post box */
+.next-box{background:linear-gradient(135deg,#0b2018,#0f2e20);border:1px solid #1a4a2a;border-radius:8px;padding:12px}
+.next-tag{font-size:9px;color:var(--green);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:3px}
+.next-title{font-size:13px;font-weight:600;line-height:1.4;color:var(--text)}
+.next-meta{font-size:10px;color:var(--muted);margin-top:4px}
+
+/* progress bars */
+.pbar{background:var(--border);border-radius:3px;height:4px;overflow:hidden;margin-bottom:4px}
+.pfill{height:100%;border-radius:3px;background:var(--green)}
+.pfill.b{background:var(--blue)}
+.prow{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-bottom:8px}
+
+/* group list */
+.gscroll{max-height:200px;overflow-y:auto}
+.grow{display:flex;align-items:center;gap:7px;padding:4px 0;border-bottom:1px solid var(--border2);font-size:11px}
+.grow:last-child{border:none}
+.gnum{color:var(--muted2);min-width:20px;font-family:'DM Mono',monospace;font-size:10px}
+.gname{flex:1;color:var(--text)}
+.gbadge{font-size:9px;padding:1px 6px;border-radius:3px;font-family:'DM Mono',monospace;font-weight:500}
+.gb-ok{background:#0a2a18;color:var(--green)}.gb-ban{background:#2a0f0f;color:#ff6060}
+.gb-cool{background:#2a1f08;color:var(--amber)}.gb-next{background:#0f3a1e;color:#2dff8e;border:1px solid var(--green)}
+.gb-used{background:#0e1e15;color:var(--muted)}
+
+/* log */
+.log-wrap{max-height:180px;overflow-y:auto;font-family:'DM Mono',monospace;font-size:10px}
+.ll{padding:2px 0;border-bottom:1px solid var(--border2);line-height:1.5;color:var(--muted)}
+.ll-ok{color:var(--green)}.ll-err{color:var(--red)}.ll-warn{color:var(--amber)}.ll-info{color:var(--blue)}
+.lts{color:var(--muted2);margin-right:8px}
+
+/* pinterest card */
+.pt-card{background:#050d1a;border:1px solid #0d1f3a;border-radius:10px;padding:14px 16px;margin-bottom:0}
+.pt-val{font-size:22px;font-weight:600;font-family:'DM Mono',monospace;color:var(--blue)}
+.pt-lbl{font-size:9px;color:#2a4a6a;margin-top:2px;text-transform:uppercase;letter-spacing:0.08em}
+.pt-box{background:#060f1a;border-radius:8px;padding:10px;text-align:center}
+
+/* token panel */
+.tok-card{background:#0d0d00;border:1px solid #2a2a10;border-radius:10px;padding:12px 14px}
+.tok-btn{display:block;background:#0b2010;border:1px solid var(--green);border-radius:7px;padding:9px;text-align:center;text-decoration:none;transition:background 0.15s;margin-bottom:6px}
+.tok-btn:hover{background:#0f3018}
+.tok-icon{font-size:16px;margin-bottom:3px}
+.tok-lbl{font-size:10px;color:var(--green);font-weight:600}
+.tok-sub{font-size:9px;color:var(--muted);margin-top:1px}
+
+/* alert card */
+.alert-card{background:#1a0808;border:1px solid #4a1515;border-radius:10px;padding:12px 14px}
+.alert-title{font-size:12px;color:var(--red);font-weight:700;margin-bottom:5px}
+.alert-msg{font-size:10px;color:#c08080;line-height:1.7}
+
+/* ══════════════ CONTENT MANAGER PAGE ══════════════ */
+.cm-layout{display:grid;grid-template-columns:236px 1fr;height:100%;overflow:hidden}
+.cm-sidebar{background:var(--s1);border-right:1px solid var(--border);padding:14px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:9px}
+.cm-content{overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:12px}
+
+/* cm tabs */
+.tab-row{display:flex;gap:1px;border-bottom:1px solid var(--border);flex-shrink:0;margin-bottom:4px}
+.ctab{padding:7px 13px;font-size:11px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;font-family:'DM Mono',monospace;background:transparent;border-top:none;border-left:none;border-right:none;transition:all 0.14s;letter-spacing:0.04em}
+.ctab.active{color:var(--green);border-bottom-color:var(--green)}
+.ctab:hover:not(.active){color:var(--text)}
+.cpanel{display:none;flex-direction:column;gap:11px}
+.cpanel.active{display:flex}
+
+/* cm cards */
+.topic-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:14px}
+.topic-card.lit{border-color:var(--green);background:#00e5a006}
+.topic-title{font-size:14px;font-weight:600;line-height:1.4;margin-bottom:8px}
+.kw-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:8px}
+.kw{background:#3d8bff15;border:1px solid #3d8bff40;color:var(--blue);font-size:10px;padding:2px 8px;border-radius:12px;font-family:'DM Mono',monospace}
+.kw.k1{background:#00e5a012;border-color:#00e5a040;color:var(--green)}
+.badge-cm{display:inline-flex;align-items:center;font-size:10px;font-family:'DM Mono',monospace;padding:2px 8px;border-radius:12px}
+.badge-pend{background:#f5a62318;border:1px solid #f5a62340;color:var(--amber)}
+.badge-pub{background:#00e5a015;border:1px solid #00e5a040;color:var(--green)}
+.info-row{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;line-height:1.7;padding:8px 10px;background:var(--s1);border-radius:6px;margin-bottom:8px}
+.arow{display:flex;gap:6px;flex-wrap:wrap}
+
+/* how-it-works */
+.how-card{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
+.how-step{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;line-height:2;display:flex;gap:10px}
+.how-num{color:var(--blue);flex-shrink:0;min-width:20px}
+
+/* article card */
+.article-card{background:var(--s2);border:1px solid var(--green);border-radius:10px;padding:14px}
+.article-meta{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:9px;display:flex;gap:8px;flex-wrap:wrap}
+.article-meta span{background:var(--s1);padding:2px 7px;border-radius:4px}
+.wp-steps{background:#3d8bff08;border:1px solid #3d8bff20;border-radius:7px;padding:9px 11px;margin-top:9px;font-size:10px;color:var(--blue);font-family:'DM Mono',monospace;line-height:1.9}
+.code-preview{background:var(--s1);border:1px solid var(--border);border-radius:6px;padding:10px;max-height:260px;overflow-y:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);white-space:pre-wrap;word-break:break-word;line-height:1.6;margin-top:9px}
+
+/* history */
+.hrow{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)}
+.hrow:last-child{border:none}
+.hnum{font-family:'DM Mono',monospace;color:var(--muted);font-size:11px;min-width:22px;padding-top:1px}
+.hbody{flex:1}
+.htitle{font-size:12px;color:var(--text);line-height:1.4}
+.hkws{display:flex;gap:4px;flex-wrap:wrap;margin-top:3px}
+.hmeta{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:2px}
+.hstatus{font-size:10px;font-family:'DM Mono',monospace;padding-top:1px;white-space:nowrap}
+.hstatus.p{color:var(--amber)}.hstatus.pub{color:var(--green)}
+
+/* cm log */
+.cm-log{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:9px 11px;font-family:'DM Mono',monospace;font-size:10px;max-height:420px;overflow-y:auto}
+
+/* timer */
+.timer-card{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.timer-val{font-size:22px;font-weight:600;font-family:'DM Mono',monospace;color:var(--green);letter-spacing:0.05em}
+.pttrack{height:3px;background:var(--border);border-radius:2px;margin-top:6px;overflow:hidden}
+.ptfill{height:100%;background:var(--green);border-radius:2px;transition:width 1s linear;width:0%}
+
+/* gap card */
+.gap-card{background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+
+/* shared buttons */
+.btn{background:transparent;border:1px solid var(--border);color:var(--text);padding:8px 12px;border-radius:6px;cursor:pointer;font-family:'Sora',sans-serif;font-size:12px;width:100%;text-align:left;transition:all 0.14s;display:flex;align-items:center;gap:7px}
+.btn:hover{border-color:var(--green);background:#00e5a010}
+.btn:active{transform:scale(0.98)}
+.btn.primary{background:var(--green);color:#000;border-color:var(--green);font-weight:600;justify-content:center}
+.btn.primary:hover{background:var(--green2)}
+.btn.primary:disabled{background:var(--s2);color:var(--muted);border-color:var(--border);cursor:not-allowed;transform:none}
+.btn.blue-btn{border-color:var(--blue);color:var(--blue)}
+.btn.blue-btn:hover{background:#3d8bff10}
+.btn.green-btn{border-color:var(--green);color:var(--green)}
+.btn.green-btn:hover{background:#00e5a010}
+.btn.sm{padding:5px 10px;font-size:11px;width:auto}
+.btn.danger{border-color:var(--red);color:var(--red)}
+.btn.danger:hover{background:#ff525210}
+
+/* spinner */
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:-2px;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* error */
+.err-box{background:#ff525208;border:1px solid #ff525230;border-radius:8px;padding:11px;font-size:11px;color:var(--red);font-family:'DM Mono',monospace;line-height:1.7}
+.err-fix{margin-top:8px;padding-top:8px;border-top:1px solid #ff525220;color:var(--amber)}
+
+/* empty */
+.empty{text-align:center;padding:30px 16px;color:var(--muted);font-family:'DM Mono',monospace;font-size:12px;line-height:2}
+.em-icon{font-size:26px;margin-bottom:6px;display:block}
+.em-cta{color:var(--green)}
+
+/* footer */
+.foot{border-top:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;justify-content:space-between;background:var(--s1);flex-shrink:0}
+.foot a{color:var(--green);font-size:10px;text-decoration:none;font-family:'DM Mono',monospace}
+.foot span{font-size:10px;color:var(--muted);font-family:'DM Mono',monospace}
+
+/* scrollbar */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+::-webkit-scrollbar-thumb:hover{background:var(--border2)}
+</style>
+</head>
 <body>
+<div class="app">
+
+<!-- ══════════════ TOPBAR ══════════════ -->
 <div class="topbar">
-  <div class="logo">🐾</div>
-  <div><div class="logo-title">OHG Pet Autopilot <span style="font-size:11px;color:#1a9e5c;background:#0f3a1e;padding:2px 8px;border-radius:4px;margin-left:6px;">v7.7</span></div>
-  <div class="logo-sub">${est.toLocaleString('en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})} EST &nbsp;·&nbsp; Auto-refresh 30s</div></div>
-  <div class="live-pill"><div class="dot"></div><span>${isActiveHour() ? 'Active' : 'Sleeping'}</span></div>
+  <div class="brand">
+    <div class="brand-icon">🐾</div>
+    <div>
+      <div class="brand-name">OHG COMMAND CENTER</div>
+      <div class="brand-sub">v7.7 · onehealthglobe.com</div>
+    </div>
+  </div>
+  <div class="topbar-center">
+    <button class="nav-tab active" onclick="switchPage('autopilot',this)">⚡ Autopilot</button>
+    <button class="nav-tab" onclick="switchPage('content',this)">✦ Content Manager</button>
+  </div>
+  <div class="topbar-right">
+    <div class="status-pill">
+      <div class="dot"></div>
+      <span style="color:var(--green)">${isActiveHour() ? 'Active' : 'Sleeping'}</span>
+    </div>
+    <span style="color:var(--muted)">${est.toLocaleString('en-US',{timeZone:'America/New_York',hour:'2-digit',minute:'2-digit'})} EST</span>
+    <span style="color:var(--muted)">↻ 30s</span>
+  </div>
 </div>
-<div class="main">
-  ${!tokenOk ? `<div class="alert-card"><div class="alert-title">🚨 FB TOKEN EXPIRED — Action Required</div><div class="alert-msg">${lastTokenError}<br><br>Fix: Go to Meta Graph Explorer → Generate new long-lived token → Update FB_TOKEN in Railway → Redeploy<br>A fix email has been sent to ${NOTIFY_EMAIL}</div></div>` : ''}
+
+<!-- ══════════════ AUTOPILOT PAGE ══════════════ -->
+<div class="page active" id="page-autopilot">
+<div class="ap-layout">
+
+<!-- AP SIDEBAR -->
+<div class="ap-sidebar">
+  <div class="slabel">performance</div>
+  <div class="sc-grid">
+    <div class="sc"><div class="sc-val g">${totalPosted}</div><div class="sc-lbl">Page posts</div></div>
+    <div class="sc"><div class="sc-val" style="font-size:14px;color:#2a4a38">Paused</div><div class="sc-lbl">Group posts</div></div>
+    <div class="sc"><div class="sc-val ${!lastTokenError?'g':'r'}" style="font-size:16px">${!lastTokenError?'✅':'⚠️'}</div><div class="sc-lbl">FB Token</div></div>
+    <div class="sc"><div class="sc-val b">${ptPostCount}</div><div class="sc-lbl">Pins</div></div>
+  </div>
+  <div class="sdiv"></div>
+  <div class="slabel">token manager</div>
+  <div class="tok-card">
+    <a href="/get-token-url" target="_blank" class="tok-btn">
+      <div class="tok-icon">🔗</div><div class="tok-lbl">Get Login URL</div><div class="tok-sub">OAuth flow</div>
+    </a>
+    <a href="/extend-token" target="_blank" class="tok-btn">
+      <div class="tok-icon">⏱️</div><div class="tok-lbl">Auto-Extend</div><div class="tok-sub">Needs APP_SECRET</div>
+    </a>
+    <a href="/auth/callback" target="_blank" class="tok-btn">
+      <div class="tok-icon">📋</div><div class="tok-lbl">View Callback</div><div class="tok-sub">Token capture</div>
+    </a>
+    <div style="font-size:9px;color:var(--muted);margin-top:6px;font-family:'DM Mono',monospace">
+      APP_ID: ${FB_APP_ID ? '✅' : '⚠️ not set'} · SECRET: ${FB_APP_SECRET ? '✅' : '⚠️ not set'}
+    </div>
+  </div>
+  <div class="sdiv"></div>
+  <div class="slabel">quick links</div>
+  <a href="/api/stats" target="_blank" class="btn" style="font-size:11px;justify-content:center">📊 API Stats JSON</a>
+  <a href="/pinterest/stats" target="_blank" class="btn" style="font-size:11px;justify-content:center">📌 Pinterest Stats</a>
+  <a href="/pinterest/boards" target="_blank" class="btn" style="font-size:11px;justify-content:center">📋 Board IDs</a>
+</div>
+
+<!-- AP CONTENT -->
+<div class="ap-content">
+
+  ${!lastTokenError ? '' : `<div class="alert-card"><div class="alert-title">🚨 FB TOKEN ISSUE</div><div class="alert-msg">${lastTokenError}<br>Use Token Manager → Get Login URL to fix.</div></div>`}
+
   <div class="grid4">
-    <div class="card"><div class="label">Page posts</div><div class="val green">${totalPosted}</div><div class="sub">Total published</div></div>
-    <div class="card"><div class="label">Group posts</div><div class="val" style="font-size:14px;color:#5a8a6a">Paused</div><div class="sub">Enable when ready</div></div>
-    <div class="card"><div class="label">Comments</div><div class="val">${totalComments}</div><div class="sub">Viral fallback</div></div>
-    <div class="card"><div class="label">FB Token</div><div class="val ${tokenOk?'green':'red'}" style="font-size:20px">${tokenOk?'✅':'⚠️'}</div><div class="sub">${tokenOk?'Connected':'EXPIRED — check email'}</div></div>
-  </div>
-  <div style="background:#1a0d00;border:1px solid #5a3010;border-radius:10px;padding:14px 16px;margin-bottom:12px;">
-    <div style="font-size:11px;color:#c8900a;text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">🔑 Token Manager — Fix Expired FB Token</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;">
-      <a href="/get-token-url" target="_blank" style="display:block;background:#0f3a1e;border:1px solid #1a9e5c;border-radius:8px;padding:10px;text-align:center;text-decoration:none;">
-        <div style="font-size:18px;margin-bottom:4px;">🔗</div>
-        <div style="font-size:10px;color:#1a9e5c;font-weight:600;">Get Login URL</div>
-        <div style="font-size:9px;color:#5a8a6a;margin-top:2px;">Opens OAuth flow</div>
-      </a>
-      <a href="/extend-token" target="_blank" style="display:block;background:#0f3a1e;border:1px solid #1a9e5c;border-radius:8px;padding:10px;text-align:center;text-decoration:none;">
-        <div style="font-size:18px;margin-bottom:4px;">⏱️</div>
-        <div style="font-size:10px;color:#1a9e5c;font-weight:600;">Auto-Extend Token</div>
-        <div style="font-size:9px;color:#5a8a6a;margin-top:2px;">Needs APP_SECRET</div>
-      </a>
-      <a href="/auth/callback" target="_blank" style="display:block;background:#0f3a1e;border:1px solid #1a9e5c;border-radius:8px;padding:10px;text-align:center;text-decoration:none;">
-        <div style="font-size:18px;margin-bottom:4px;">📋</div>
-        <div style="font-size:10px;color:#1a9e5c;font-weight:600;">View Callback</div>
-        <div style="font-size:9px;color:#5a8a6a;margin-top:2px;">Token capture page</div>
-      </a>
+    <div class="card">
+      <div class="card-title">Post Index</div>
+      <div style="font-size:26px;font-weight:600;font-family:'DM Mono',monospace">${postIndex%62+1}<span style="font-size:14px;color:var(--muted)">/62</span></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px">Round ${Math.floor(postIndex/62)+1}</div>
     </div>
-    <div style="font-size:10px;color:#8a6018;line-height:1.8;background:#2a1508;border-radius:6px;padding:8px 10px;">
-      Required Railway vars: <code style="color:#c8900a">FB_APP_ID</code> (App ID number) + <code style="color:#c8900a">FB_APP_SECRET</code> (optional, for auto-extend)<br>
-      Status: APP_ID ${FB_APP_ID ? '✅ set' : '⚠️ NOT SET — add FB_APP_ID to Railway vars'} &nbsp;·&nbsp; APP_SECRET ${FB_APP_SECRET ? '✅ set' : '⚠️ not set'}
+    <div class="card">
+      <div class="card-title">Active Groups</div>
+      <div style="font-size:26px;font-weight:600;font-family:'DM Mono',monospace;color:var(--green)">${PET_GROUPS.filter(g=>!groupStats[g.id].permanent).length}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px">${PET_GROUPS.filter(g=>groupStats[g.id].permanent).length} banned · ${PET_GROUPS.filter(g=>groupStats[g.id].cooldown&&!groupStats[g.id].permanent).length} cooldown</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Interval</div>
+      <div style="font-size:26px;font-weight:600;font-family:'DM Mono',monospace;color:var(--blue)">${INTERVAL_MS/60000}<span style="font-size:12px;color:var(--muted)">min</span></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px">${INTERVAL_MS/3600000}hr per post cycle</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Token Refreshes</div>
+      <div style="font-size:26px;font-weight:600;font-family:'DM Mono',monospace;color:${tokenRefreshAttempts>0?'var(--amber)':'var(--green)'}">${tokenRefreshAttempts}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px">${tokenRefreshAttempts>0?'errors detected':'clean run'}</div>
     </div>
   </div>
-  <div class="proxy-card">
-    <div class="proxy-title">🔌 Claude Proxy — Content Manager Bridge</div>
-    <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap;">
-      <div style="font-size:12px;color:#a0c0d8;line-height:1.7;"><span style="color:#4a9ed4;">POST</span> <code style="background:#0d1f2e;padding:2px 8px;border-radius:4px;font-size:11px;">/claude-proxy</code> — active ✅<br><span style="font-size:10px;color:#3a5a7a;">Used by OHG-Content-Manager.html to call Claude API securely</span></div>
-      <div style="margin-left:auto;text-align:right;"><div style="font-size:11px;color:#4a9ed4;">CORS: enabled ✅</div><div style="font-size:10px;color:#3a5a7a;">web-search beta: enabled ✅</div></div>
-    </div>
-  </div>
-  <div class="pt-card">
-    <div class="pt-title">📌 Pinterest Autopilot</div>
-    <div class="pt-grid">
-      <div class="pt-box"><div class="pt-val">${ptPostCount}</div><div class="pt-lbl">Pins posted</div></div>
-      <div class="pt-box"><div class="pt-val">${ptBoardsReady}<span style="font-size:12px;color:#3a5a7a;">/${Object.keys(PT_BOARDS).length}</span></div><div class="pt-lbl">Boards ready</div></div>
-      <div class="pt-box"><div class="pt-val">${PT_POSTS.length}</div><div class="pt-lbl">Posts in rotation</div></div>
-      <div class="pt-box"><div class="pt-val" style="font-size:14px;">${process.env.PINTEREST_TOKEN ? '✅' : '⚠️'}</div><div class="pt-lbl">${process.env.PINTEREST_TOKEN ? 'Token set' : 'No token'}</div></div>
-    </div>
-    ${ptLastPost ? `<div style="margin-top:10px;padding:8px 10px;background:#0d1525;border-radius:6px;font-size:11px;color:#4a7aaa;">✅ Last pin: <span style="color:#a0c0d8;">${ptLastPost.topic}</span> → ${ptLastPost.board}</div>` : `<div style="margin-top:10px;padding:8px 10px;background:#0d1525;border-radius:6px;font-size:11px;color:#3a5a7a;">⏳ ${ptBoardsReady===0?'Add board IDs to Railway vars':'Waiting for next interval'}</div>`}
-    <div style="margin-top:8px;font-size:10px;color:#3a5a7a;">Posts every 2.5hrs · <a href="/pinterest/boards" style="color:#4a7aaa;text-decoration:none;">Get board IDs →</a></div>
-  </div>
-  <div class="grid4">
-    <div class="card"><div class="label">Post index</div><div class="val">${postIndex%62+1}<span style="font-size:14px;color:#5a8a6a;">/62</span></div><div class="sub">Round ${round}</div></div>
-    <div class="card"><div class="label">Active groups</div><div class="val green">${activeGroups.length}</div><div class="sub">${permanentGroups.length} banned · ${cooldownGroups.length} cooldown</div></div>
-    <div class="card"><div class="label">Used this cycle</div><div class="val">${postedGroupsThisCycle.size}</div><div class="sub">of 51 groups</div></div>
-    <div class="card"><div class="label">Token refreshes</div><div class="val ${tokenRefreshAttempts>0?'amber':'green'}">${tokenRefreshAttempts}</div><div class="sub">${tokenRefreshAttempts>0?'errors detected':'clean'}</div></div>
-  </div>
+
   <div class="grid2">
     <div class="card">
-      <div class="card-title">Next scheduled FB post</div>
-      <div class="next-box"><div class="next-tag">P${String(nextPost.id).padStart(2,'0')} &nbsp;·&nbsp; ${nextPost.cat}</div><div class="next-title">${nextPost.title}</div><div class="next-meta">Next group: ${nextGroup.name}</div></div>
-      <div style="font-size:11px;color:#5a8a6a;">Fires every 60 min · 24/7 active</div>
-    </div>
-    <div class="card">
-      <div class="card-title">Cycle progress</div>
-      <div class="bar-wrap"><div class="bar-fill bar-green" style="width:${Math.round(((postIndex%62+1)/62)*100)}%"></div></div>
-      <div class="bar-label"><span>FB posts cycle</span><span>${Math.round(((postIndex%62+1)/62)*100)}%</span></div>
-      <div class="bar-wrap"><div class="bar-fill bar-blue" style="width:${Math.round((ptPostCount/PT_POSTS.length)*100)}%"></div></div>
-      <div class="bar-label"><span>Pinterest cycle</span><span>${Math.round((ptPostCount/PT_POSTS.length)*100)}%</span></div>
-      <div class="mini3">
-        <div class="mini-box"><div class="mini-val">62</div><div class="mini-lbl">FB Posts</div></div>
-        <div class="mini-box"><div class="mini-val">${PT_POSTS.length}</div><div class="mini-lbl">PT Posts</div></div>
-        <div class="mini-box" style="background:#1a2e10;"><div class="mini-val" style="color:#c8900a;">R${round}</div><div class="mini-lbl">Round</div></div>
+      <div class="card-title">Next Scheduled Post</div>
+      <div class="next-box">
+        <div class="next-tag">P${String(POSTS[postIndex%62].id).padStart(2,'0')} · ${POSTS[postIndex%62].cat}</div>
+        <div class="next-title">${POSTS[postIndex%62].title}</div>
+        <div class="next-meta">Every ${INTERVAL_MS/3600000}hrs · Claude AI image · 24/7</div>
       </div>
     </div>
+    <div class="card">
+      <div class="card-title">Cycle Progress</div>
+      <div class="pbar"><div class="pfill" style="width:${Math.round(((postIndex%62+1)/62)*100)}%"></div></div>
+      <div class="prow"><span>FB Posts (62 total)</span><span>${Math.round(((postIndex%62+1)/62)*100)}%</span></div>
+      <div class="pbar"><div class="pfill b" style="width:${Math.round((ptPostCount/PT_POSTS.length)*100)}%"></div></div>
+      <div class="prow"><span>Pinterest (${PT_POSTS.length} total)</span><span>${Math.round((ptPostCount/PT_POSTS.length)*100)}%</span></div>
+    </div>
   </div>
-  <div class="card" style="margin-bottom:12px;">
-    <div class="card-title">Group rotation — ${PET_GROUPS.length} groups <span style="margin-left:auto;font-size:10px;background:#0f3a1e;color:#1a9e5c;padding:2px 8px;border-radius:4px;">${activeGroups.length} ready · ${permanentGroups.length} banned</span></div>
-    <div class="g-scroll">${PET_GROUPS.map((g,i)=>{const s=groupStats[g.id];const isNext=nextGroup&&g.id===nextGroup.id;const used=postedGroupsThisCycle.has(g.id);let badge='';if(isNext)badge='<span class="badge b-next">◀ next</span>';else if(s.permanent)badge='<span class="badge b-ban">⛔ banned</span>';else if(s.cooldown)badge='<span class="badge b-cool">🚫 cooldown</span>';else if(used)badge='<span class="badge b-used">✓ used</span>';else badge='<span class="badge b-ok">ready</span>';const stats=(s.success>0||s.fail>0)?`<span style="font-size:10px;color:#3a5a44;margin-right:6px;">✅${s.success} ❌${s.fail}</span>`:'';return `<div class="g-row"><span class="g-num">${i+1}</span><span class="g-name">${g.name}</span>${stats}<span class="g-id">${g.id.substring(0,10)}...</span>${badge}</div>`;}).join('')}</div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">🔌 Claude Proxy <span style="color:var(--green);font-size:9px">ACTIVE ✅</span></div>
+      <div style="font-size:11px;color:var(--blue);font-family:'DM Mono',monospace">POST /claude-proxy</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:4px;line-height:1.7">Used by Content Manager · CORS enabled · Web search beta ✅</div>
+    </div>
+    <div class="pt-card card" style="background:#050d1a;border-color:#0d1f3a">
+      <div class="card-title" style="color:#2a5a8a">📌 Pinterest</div>
+      <div class="grid2" style="gap:6px">
+        <div class="pt-box"><div class="pt-val">${ptPostCount}</div><div class="pt-lbl">Pins posted</div></div>
+        <div class="pt-box"><div class="pt-val">${Object.values(PT_BOARDS).filter(b=>b.id).length}<span style="font-size:12px;color:#2a4a6a">/${Object.keys(PT_BOARDS).length}</span></div><div class="pt-lbl">Boards ready</div></div>
+      </div>
+      ${ptLastPost ? `<div style="margin-top:8px;font-size:10px;color:#2a5a8a;font-family:'DM Mono',monospace">Last: ${ptLastPost.topic.substring(0,45)}...</div>` : `<div style="margin-top:8px;font-size:10px;color:#1a3a5a;font-family:'DM Mono',monospace">⏳ Waiting for next interval · every 2.5hrs</div>`}
+    </div>
   </div>
-  <div class="card" style="margin-bottom:16px;">
-    <div class="card-title">Deploy logs <span style="margin-left:auto;font-size:10px;color:#3a5a44;">${logs.length} entries</span></div>
-    <div class="log-wrap">${logs.slice(0,60).map(l=>{let cls='log-line';if(l.includes('✅')||l.includes('SUCCESS'))cls+=' log-ok';else if(l.includes('❌')||l.includes('ERROR'))cls+=' log-err';else if(l.includes('⚠️')||l.includes('🚫')||l.includes('SKIP'))cls+=' log-warn';else if(l.includes('[Pinterest]')||l.includes('📧')||l.includes('🔄')||l.includes('[Proxy]'))cls+=' log-info';const ts=l.match(/\[([\d\-T:.Z]+)\]/);const msg=ts?l.replace(ts[0],'').trim():l;const time=ts?new Date(ts[1]).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';return `<div class="${cls}"><span style="color:#2a4a32;margin-right:8px;">${time}</span>${msg}</div>`;}).join('')}</div>
+
+  <div class="card">
+    <div class="card-title">Group Rotation — ${PET_GROUPS.length} groups <span style="color:var(--green)">${PET_GROUPS.filter(g=>!groupStats[g.id].permanent).length} ready · ${PET_GROUPS.filter(g=>groupStats[g.id].permanent).length} banned</span></div>
+    <div class="gscroll">${PET_GROUPS.map((g,i)=>{
+      const s=groupStats[g.id];
+      const isNext=pickNextGroup()&&g.id===pickNextGroup().id;
+      const used=postedGroupsThisCycle.has(g.id);
+      let badge='';
+      if(isNext) badge='<span class="gbadge gb-next">◀ next</span>';
+      else if(s.permanent) badge='<span class="gbadge gb-ban">banned</span>';
+      else if(s.cooldown) badge='<span class="gbadge gb-cool">cooldown</span>';
+      else if(used) badge='<span class="gbadge gb-used">used</span>';
+      else badge='<span class="gbadge gb-ok">ready</span>';
+      const stats=(s.success>0||s.fail>0)?`<span style="font-size:9px;color:var(--muted2);margin-right:4px">✅${s.success} ❌${s.fail}</span>`:'';
+      return `<div class="grow"><span class="gnum">${i+1}</span><span class="gname">${g.name}</span>${stats}${badge}</div>`;
+    }).join('')}</div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Deploy Logs <span style="color:var(--muted)">${logs.length} entries</span></div>
+    <div class="log-wrap">${logs.slice(0,60).map(l=>{
+      let cls='ll';
+      if(l.includes('✅')||l.includes('SUCCESS')) cls+=' ll-ok';
+      else if(l.includes('❌')||l.includes('ERROR')) cls+=' ll-err';
+      else if(l.includes('⚠️')||l.includes('🚫')||l.includes('SKIP')) cls+=' ll-warn';
+      else if(l.includes('[Pinterest]')||l.includes('📧')||l.includes('🔄')||l.includes('[Proxy]')||l.includes('🎨')) cls+=' ll-info';
+      const ts=l.match(/\[([\d\-T:.Z]+)\]/);
+      const msg=ts?l.replace(ts[0],'').trim():l;
+      const time=ts?new Date(ts[1]).toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'';
+      return `<div class="${cls}"><span class="lts">${time}</span>${msg}</div>`;
+    }).join('')}</div>
+  </div>
+
+</div><!-- end ap-content -->
+</div><!-- end ap-layout -->
+</div><!-- end page-autopilot -->
+
+<!-- ══════════════ CONTENT MANAGER PAGE ══════════════ -->
+<div class="page" id="page-content">
+<div class="cm-layout">
+
+<!-- CM SIDEBAR -->
+<div class="cm-sidebar">
+  <div>
+    <div class="slabel">next cycle in</div>
+    <div class="timer-card">
+      <div style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;margin-bottom:3px">24h content cycle</div>
+      <div class="timer-val" id="countdown">24:00:00</div>
+      <div class="pttrack"><div class="ptfill" id="prog"></div></div>
+    </div>
+  </div>
+  <div class="sc-grid">
+    <div class="sc"><div class="sc-val g" id="s-total">0</div><div class="sc-lbl">suggested</div></div>
+    <div class="sc"><div class="sc-val b" id="s-art">0</div><div class="sc-lbl">articles</div></div>
+    <div class="sc"><div class="sc-val a" id="s-pend">0</div><div class="sc-lbl">pending</div></div>
+    <div class="sc"><div class="sc-val g" id="s-pub">0</div><div class="sc-lbl">published</div></div>
+  </div>
+  <div class="sdiv"></div>
+  <div>
+    <div class="slabel">content gap</div>
+    <div class="gap-card">
+      <div class="sc-val g">400+</div>
+      <div class="sc-lbl">zoetis topics</div>
+      <div style="font-size:9px;color:var(--muted);margin-top:4px;font-family:'DM Mono',monospace" id="s-gaps">calculating...</div>
+    </div>
+  </div>
+  <div class="sdiv"></div>
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <div class="slabel">actions</div>
+    <button class="btn primary" id="run-btn" onclick="runCycle()">▶ Run content cycle</button>
+    <button class="btn blue-btn" id="gen-btn" style="display:none" onclick="generateArticle()">✦ Generate article</button>
+    <button class="btn green-btn" id="pub-btn" style="display:none" onclick="markPublished()">✓ Mark published</button>
+    <button class="btn" onclick="showCmTab('history')">⊞ Topic history</button>
+    <button class="btn" onclick="showCmTab('cmlog')">◎ Activity log</button>
+  </div>
+  <div class="sdiv"></div>
+  <div>
+    <div class="slabel">site scan</div>
+    <button class="btn" onclick="scanSite()" style="border-color:var(--blue);color:var(--blue)">⊙ Scan OHG sitemap</button>
+    <div style="font-size:9px;color:var(--muted);margin-top:5px;font-family:'DM Mono',monospace" id="scan-info">last scan: never</div>
+  </div>
+  <div class="sdiv"></div>
+  <button class="btn danger" onclick="resetAll()" style="font-size:11px">↺ Reset all data</button>
+  <div style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:4px;line-height:1.7">
+    Railway: <span id="conn-text" style="color:var(--amber)">checking...</span><br>
+    <span id="clock" style="color:var(--muted)">--:--:--</span>
   </div>
 </div>
+
+<!-- CM CONTENT -->
+<div class="cm-content">
+
+  <div class="tab-row">
+    <button class="ctab active" id="ctab-current" onclick="showCmTab('current')">current topic</button>
+    <button class="ctab" id="ctab-article" onclick="showCmTab('article')">article</button>
+    <button class="ctab" id="ctab-history" onclick="showCmTab('history')">history</button>
+    <button class="ctab" id="ctab-cmlog" onclick="showCmTab('cmlog')">activity log</button>
+  </div>
+
+  <!-- CURRENT TOPIC -->
+  <div class="cpanel active" id="cpanel-current">
+    <div class="topic-card lit" id="topic-main">
+      <div class="empty"><span class="em-icon">🐾</span>No topic yet.<br>Click <span class="em-cta">▶ Run content cycle</span> to start.<br><span style="font-size:10px">Searches USA pet trends + Zoetis 400+ gaps<br>picks the best low-competition topic.</span></div>
+    </div>
+    <div class="how-card">
+      <div style="font-size:9px;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:7px">How it works</div>
+      <div class="how-step"><span class="how-num">01</span><span>Searches live USA Google Trends + SERP gaps via web</span></div>
+      <div class="how-step"><span class="how-num">02</span><span>Compares 400+ Zoetis topics vs OHG published posts</span></div>
+      <div class="how-step"><span class="how-num">03</span><span>Picks lowest-competition, highest-traffic gap topic</span></div>
+      <div class="how-step"><span class="how-num">04</span><span>Suggests 3 ranked keywords (primary → long-tail)</span></div>
+      <div class="how-step"><span class="how-num">05</span><span>Writes 900–1100 word WordPress-ready HTML article</span></div>
+      <div class="how-step"><span class="how-num">06</span><span>Download → paste into WordPress Code Editor → Publish</span></div>
+      <div class="how-step"><span class="how-num">07</span><span>Mark published → next cycle queues in 24h</span></div>
+    </div>
+  </div>
+
+  <!-- ARTICLE -->
+  <div class="cpanel" id="cpanel-article">
+    <div id="article-area">
+      <div class="topic-card"><div class="empty"><span class="em-icon">📝</span>No article yet.<br>Run a cycle first, then click <span class="em-cta">✦ Generate article</span></div></div>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="cpanel" id="cpanel-history">
+    <div class="topic-card" id="history-area">
+      <div class="empty"><span class="em-icon">📋</span>No history yet</div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="cpanel" id="cpanel-cmlog">
+    <div class="cm-log" id="log-area">
+      <div class="ll"><span class="lts">INIT</span><span class="ll-ok">OHG Command Center loaded</span></div>
+    </div>
+  </div>
+
+</div><!-- end cm-content -->
+</div><!-- end cm-layout -->
+</div><!-- end page-content -->
+
+<!-- FOOTER -->
 <div class="foot">
   <a href="https://onehealthglobe.com" target="_blank">onehealthglobe.com</a>
-  <span>OHG v7.7 · FB 62 posts · Pinterest ${PT_POSTS.length} posts · Claude Proxy ✅</span>
-  <a href="/api/stats" target="_blank">API stats →</a>
-</div></body></html>`;
+  <span>OHG v7.7 · 62 FB Posts · ${PT_POSTS.length} Pinterest · Claude AI images · 3hr interval · Groups paused</span>
+  <span style="color:var(--muted)">${est.toLocaleString('en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric'})} EST</span>
+</div>
+
+</div><!-- end app -->
+
+<script>
+'use strict';
+
+// ── PAGE SWITCHER ──────────────────────────────────────────────────────────
+function switchPage(id, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'content') { checkConn(); }
+}
+
+// ── CM CONFIG ──────────────────────────────────────────────────────────────
+const RAILWAY = window.location.origin;
+
+const OHG_PUBLISHED = [
+  'beagle breed','boxer breed','bulldog breed','german shepherd','rottweiler','pomeranian',
+  'persian cat','ragdoll cat','deadly pet diseases','pet first aid','pet vaccines',
+  'toxic plants','zoonosis','kitten planner','pet food faq','cat grooming',
+  'pet hygiene','osteoarthritis','paw scratches','harness training',
+  'dog grooming accessories','pet grooming products'
+];
+
+const ZOETIS_GAPS = [
+  'why is my dog itching constantly','dog separation anxiety home treatment',
+  'how to potty train a puppy fast','dog arthritis early warning signs',
+  'why is my cat throwing up every day','signs of heartworm in dogs USA',
+  'flea and tick prevention dogs 2025','dog seasonal allergies treatment at home',
+  'cat urinary tract infection symptoms','puppy first vet visit what to expect',
+  'how to brush dog teeth at home','dog ear infection natural remedy',
+  'cat dental disease treatment','pancreatitis in dogs home care',
+  'dog food allergies vs intolerances','cat hairball remedies that work',
+  'dog hot spots treatment at home','kennel cough in dogs recovery',
+  'cat hyperthyroidism signs and diet','dog hip dysplasia exercises',
+  'reverse sneezing in dogs causes','cat asthma attack signs',
+  'dog anal gland problems relief','leptospirosis in dogs prevention',
+  'cat ringworm treatment home','dog epilepsy management',
+  'pet diabetes warning signs','how to trim dog nails safely',
+  'cat litter box avoidance reasons','dog vomiting yellow bile causes',
+  'cat overgrooming stress signs','dog skin rash treatment',
+  'parvo in vaccinated puppies','cat chronic kidney disease diet',
+  'dog congestive heart failure signs','cat eye discharge colors meaning',
+  'dog constipation home remedy','feline leukemia prevention',
+  'canine distemper vaccine schedule','cat scratch disease humans',
+  'dog ACL injury recovery','senior dog care guide 2025',
+  'cat arthritis pain management','dog cherry eye treatment cost',
+  'pet insurance worth it 2025','how to give liquid medicine to cat',
+  'dog cognitive dysfunction pacing','cat hyperthyroidism weight loss',
+  'dog liver disease diet','cat bladder stones symptoms',
+  'dog bloat GDV emergency signs','pet dental cleaning cost USA',
+  'dog mange home treatment','puppy socialization critical age',
+  'indoor cat enrichment ideas','adult dog crate training',
+  'how to stop dog barking','cat scratching furniture fix',
+  'loose leash walking training','best family dog breeds USA 2025',
+  'low shedding dogs for allergies','hypoallergenic cat breeds guide',
+  'best cats for first time owners','small dog breeds apartments',
+  'senior cat care tips 2025','how often to bathe a dog',
+  'cat grooming at home guide','dog nail grinding vs clipping',
+  'best food for senior dogs joints','raw diet for dogs risks',
+  'grain free dog food heart link','how much to feed a cat chart',
+  'puppy feeding schedule by age','wet vs dry cat food comparison',
+  'pet safe household cleaners list','toxic plants for cats full list',
+  'foods dogs cannot eat complete','easter lily cat toxicity',
+  'xylitol poisoning dogs symptoms','chocolate toxicity dogs amount',
+  'dog first aid kit essentials','how to perform CPR on a dog',
+  'pet emergency preparedness plan','moving with pets checklist',
+  'traveling with cats by car tips','flying with pets airline rules 2025',
+  'dog park safety rules guide','pet friendly hotels USA tips',
+  'hiking with dogs safety tips','dog swimming pool safety',
+  'camping with dogs gear list','beach safety tips for dogs',
+  'cat separation anxiety solutions','dog thunder phobia treatment',
+  'how to introduce new puppy to old dog','baby and dog introduction tips',
+  'dog resource guarding treatment','cat aggression causes fix',
+  'dog destructive chewing solutions','cat midnight zoomies fix',
+  'how to tell if dog is in pain','cat hiding behavior meaning',
+  'dog panting at night causes','cat not eating 2 days causes',
+  'dog drinking too much water causes','cat drinking more water signs',
+  'dog sudden weight loss causes','cat sudden weight gain reasons',
+  'dog bad breath home treatment','cat bad breath dental causes',
+  'dog scooting carpet fix','cat sneezing constantly causes',
+  'dog head shaking ear mites','dog limping front leg diagnosis',
+  'dog nose dry cracked causes','dog swollen belly emergency',
+  'dog eye discharge colors meaning','cat third eyelid showing causes',
+  'puppy teething relief tips','how to introduce cats properly',
+  'dog car sickness prevention','cat indoor safety checklist'
+];
+
+let S = {
+  currentTopic: null, currentArticle: null, history: [],
+  cycleStart: null, totalCycles: 0, published: 0, pending: 0,
+  lastScan: null, logs: [{ts:'INIT',type:'ok',msg:'OHG Command Center loaded'}]
+};
+let timerInterval = null;
+
+// ── INIT ────────────────────────────────────────────────────────────────────
+function init() {
+  loadState(); startClock();
+  if (S.cycleStart) restoreTimer();
+  updateUI(); renderLog();
+  checkConn();
+}
+
+// ── CONNECTION ───────────────────────────────────────────────────────────────
+async function checkConn() {
+  const txt = document.getElementById('conn-text');
+  if (!txt) return;
+  txt.textContent = 'connecting...'; txt.style.color = 'var(--amber)';
+  try {
+    const r = await fetch(RAILWAY + '/api/stats', { signal: AbortSignal.timeout(5000) });
+    if (r.ok || r.status < 500) { txt.textContent = 'connected ✓'; txt.style.color = 'var(--green)'; addLog('ok', 'Railway connected'); }
+    else throw new Error('HTTP ' + r.status);
+  } catch(e) { txt.textContent = 'offline'; txt.style.color = 'var(--red)'; addLog('warn', 'Railway offline'); }
+}
+
+// ── STORAGE ──────────────────────────────────────────────────────────────────
+function saveState() {
+  try { localStorage.setItem('ohg_content', JSON.stringify({currentTopic:S.currentTopic,currentArticle:S.currentArticle,history:S.history,cycleStart:S.cycleStart,totalCycles:S.totalCycles,published:S.published,pending:S.pending,lastScan:S.lastScan})); } catch(e) {}
+}
+function loadState() {
+  try { const d = JSON.parse(localStorage.getItem('ohg_content')||'{}'); Object.assign(S, d); addLog('info', 'State loaded — ' + S.history.length + ' topics'); } catch(e) { addLog('info','Fresh start'); }
+}
+function resetAll() {
+  if (!confirm('Reset all content data?')) return;
+  localStorage.removeItem('ohg_content');
+  S = {currentTopic:null,currentArticle:null,history:[],cycleStart:null,totalCycles:0,published:0,pending:0,lastScan:null,logs:[{ts:'RESET',type:'warn',msg:'Data reset'}]};
+  if (timerInterval) clearInterval(timerInterval);
+  timerInterval = null;
+  document.getElementById('countdown').textContent = '24:00:00';
+  document.getElementById('prog').style.width = '0%';
+  document.getElementById('gen-btn').style.display = 'none';
+  document.getElementById('pub-btn').style.display = 'none';
+  document.getElementById('topic-main').innerHTML = '<div class="empty"><span class="em-icon">🐾</span>No topic yet.<br>Click <span class="em-cta">▶ Run content cycle</span></div>';
+  document.getElementById('article-area').innerHTML = '<div class="topic-card"><div class="empty"><span class="em-icon">📝</span>No article yet.</div></div>';
+  updateUI(); renderLog();
+}
+
+// ── CLOCK & TIMER ────────────────────────────────────────────────────────────
+function startClock() { setInterval(() => { const el = document.getElementById('clock'); if(el) el.textContent = new Date().toLocaleTimeString('en-US',{hour12:false}); }, 1000); }
+function startTimer() { S.cycleStart = Date.now(); saveState(); if (timerInterval) clearInterval(timerInterval); timerInterval = setInterval(tickTimer, 1000); }
+function restoreTimer() { if (timerInterval) clearInterval(timerInterval); timerInterval = setInterval(tickTimer, 1000); }
+function tickTimer() {
+  if (!S.cycleStart) return;
+  const rem = Math.max(0, 24*3600000 - (Date.now() - S.cycleStart));
+  const h=Math.floor(rem/3600000), m=Math.floor((rem%3600000)/60000), s=Math.floor((rem%60000)/1000);
+  const el = document.getElementById('countdown'); if(el) el.textContent = pad(h)+':'+pad(m)+':'+pad(s);
+  const pf = document.getElementById('prog'); if(pf) pf.style.width = Math.min(100,((Date.now()-S.cycleStart)/86400000)*100).toFixed(2)+'%';
+  if (rem===0) { clearInterval(timerInterval); addLog('ok','Cycle complete — ready for next topic'); }
+}
+function pad(n) { return String(n).padStart(2,'0'); }
+
+// ── LOG ───────────────────────────────────────────────────────────────────────
+function addLog(type, msg) {
+  const ts = new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  S.logs.unshift({ts,type,msg}); if(S.logs.length>100) S.logs.pop(); renderLog();
+}
+function renderLog() {
+  const box = document.getElementById('log-area'); if(!box) return;
+  const cls = {ok:'ll-ok',info:'ll-info',warn:'ll-warn',err:'ll-err'};
+  box.innerHTML = S.logs.map(l=>'<div class="ll"><span class="lts">'+esc(l.ts)+'</span><span class="'+(cls[l.type]||'')+'">'+esc(l.msg)+'</span></div>').join('');
+}
+
+// ── UI ────────────────────────────────────────────────────────────────────────
+function updateUI() {
+  set('s-total', S.totalCycles);
+  set('s-art', S.history.filter(h=>h.hasArticle).length);
+  set('s-pend', S.pending);
+  set('s-pub', S.published);
+  set('s-gaps', 'gaps remaining: ' + Math.max(0, ZOETIS_GAPS.length - S.totalCycles));
+  renderHistory();
+  if (S.currentTopic) renderCurrentTopic();
+  if (S.lastScan) set('scan-info', 'last scan: ' + S.lastScan);
+  if (S.currentTopic && S.currentTopic.status !== 'published') document.getElementById('pub-btn').style.display = 'flex';
+  if (S.currentArticle) { document.getElementById('gen-btn').style.display = 'flex'; document.getElementById('gen-btn').innerHTML = '↻ Regenerate article'; }
+}
+function showCmTab(tab) {
+  ['current','article','history','cmlog'].forEach(t => {
+    document.getElementById('cpanel-'+t).classList.toggle('active', t===tab);
+    document.getElementById('ctab-'+t).classList.toggle('active', t===tab);
+  });
+  if(tab==='history') renderHistory();
+  if(tab==='cmlog') renderLog();
+}
+function renderCurrentTopic() {
+  const t = S.currentTopic; if(!t) return;
+  const isPub = t.status==='published';
+  document.getElementById('topic-main').innerHTML =
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;flex-wrap:wrap;gap:5px">' +
+    '<span class="badge-cm '+(isPub?'badge-pub':'badge-pend')+'">'+(isPub?'✓ published':'● pending')+'</span>' +
+    '<span style="font-size:10px;color:var(--muted);font-family:\'DM Mono\',monospace">cycle #'+(t.cycleNum||S.totalCycles)+' · '+(t.date||'')+'</span></div>' +
+    '<div class="topic-title">'+esc(t.title)+'</div>' +
+    '<div style="font-size:10px;color:var(--muted);font-family:\'DM Mono\',monospace;margin-bottom:7px;display:flex;gap:7px;flex-wrap:wrap">' +
+    '<span style="background:var(--s1);padding:2px 7px;border-radius:4px">difficulty: '+esc(t.difficulty||'low')+'</span>' +
+    '<span style="background:var(--s1);padding:2px 7px;border-radius:4px">intent: '+esc(t.intent||'informational')+'</span></div>' +
+    '<div class="kw-row">'+( t.keywords||[]).map((k,i)=>'<span class="kw '+(i===0?'k1':'')+'\">#'+(i+1)+' '+esc(k)+'</span>').join('')+'</div>' +
+    '<div class="info-row">'+esc(t.rationale||'')+'</div>' +
+    '<div class="arow">'+(S.currentArticle?'<button class="btn sm blue-btn" onclick="downloadArticle()">↓ Download HTML</button><button class="btn sm" onclick="copyArticle()">⊕ Copy HTML</button>':'')+'</div>';
+}
+function renderHistory() {
+  const area = document.getElementById('history-area'); if(!area) return;
+  if (!S.history.length) { area.innerHTML = '<div class="empty"><span class="em-icon">📋</span>No history yet</div>'; return; }
+  area.innerHTML = S.history.slice().reverse().map((h,i) =>
+    '<div class="hrow"><span class="hnum">#'+(S.history.length-i)+'</span><div class="hbody"><div class="htitle">'+esc(h.title)+'</div>' +
+    '<div class="hkws">'+(h.keywords||[]).map(k=>'<span class="kw" style="font-size:9px">'+esc(k)+'</span>').join('')+'</div>' +
+    '<div class="hmeta">'+(h.date||'')+(h.hasArticle?' · article ready':'')+'</div></div>' +
+    '<span class="hstatus '+(h.status==='published'?'pub':'p')+'">'+(h.status==='published'?'✓ done':'● pending')+'</span></div>'
+  ).join('');
+}
+
+// ── CLAUDE API ───────────────────────────────────────────────────────────────
+async function callClaude(messages, useSearch) {
+  const body = {model:'claude-sonnet-4-5',max_tokens:4000,messages};
+  if (useSearch) body.tools = [{type:'web_search_20250305',name:'web_search'}];
+  const r = await fetch(RAILWAY + '/claude-proxy', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:AbortSignal.timeout(120000)});
+  if (!r.ok) { const t = await r.text(); throw new Error('Railway '+r.status+': '+t.substring(0,200)); }
+  const d = await r.json();
+  if (d.error) throw new Error(d.error.message||JSON.stringify(d.error));
+  return (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('');
+}
+async function callClaudeWithRetry(messages, useSearch, retries=2) {
+  for (let i=0; i<=retries; i++) {
+    try { return await callClaude(messages, useSearch); }
+    catch(e) { if(e.message.includes('429')&&i<retries) { addLog('warn','Rate limit — waiting 30s...'); await new Promise(r=>setTimeout(r,30000)); } else throw e; }
+  }
+}
+function startGenCooldown() {
+  const btn = document.getElementById('gen-btn');
+  let secs = 20; btn.disabled = true;
+  const tick = setInterval(()=>{ btn.innerHTML='⏳ '+secs+'s cooldown'; secs--; if(secs<0){clearInterval(tick);btn.disabled=false;btn.innerHTML='✦ Generate article';} },1000);
+}
+
+// ── RUN CYCLE ────────────────────────────────────────────────────────────────
+async function runCycle() {
+  const btn = document.getElementById('run-btn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span> Running...';
+  addLog('info','Content cycle started'); showCmTab('current');
+  document.getElementById('topic-main').innerHTML = '<div class="empty"><span class="spin" style="width:20px;height:20px;border-width:3px;display:block;margin:0 auto 10px"></span><span style="color:var(--blue)">Agent running...</span><br>Searching USA pet trends + Zoetis gaps...</div>';
+  const usedTitles = S.history.map(h=>h.title).slice(-25).join('; ')||'none yet';
+  const gapSample = ZOETIS_GAPS.filter(g=>!S.history.some(h=>h.title.toLowerCase().includes(g.split(' ')[0].toLowerCase()))).slice(0,55).join(', ');
+  const prompt = 'You are a USA pet health SEO content strategist for One Health Globe (onehealthglobe.com).\nThe site has Domain Rating 0 — target ONLY low-competition, long-tail keywords.\n\nAlready published on OHG: '+OHG_PUBLISHED.join(', ')+'\nDO NOT suggest these previously suggested topics: '+usedTitles+'\nDraw topic ideas from this competitor gap list: '+gapSample+'\n\nToday: '+new Date().toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'\n\nTASK: Use web search to find what USA pet owners are actively searching right now.\nPick ONE topic that is NOT already on OHG, has low keyword difficulty (KD under 20), targets USA pet owners, and has informational intent.\n\nReply ONLY in this exact JSON (no markdown, no preamble):\n{"title":"Full SEO Title Here","keywords":["primary usa keyword","secondary keyword","long tail question keyword"],"rationale":"2 sentences on low competition and traffic potential for DR 0 site.","difficulty":"low","intent":"informational"}';
+  try {
+    addLog('info','Calling Claude via proxy with web search...');
+    const text = await callClaude([{role:'user',content:prompt}], true);
+    const m = text.replace(/\`\`\`json|\`\`\`/g,'').match(/\{[\s\S]*?\}/);
+    if(!m) throw new Error('No JSON in response: '+text.substring(0,200));
+    const topic = JSON.parse(m[0]);
+    if(!topic.title||!Array.isArray(topic.keywords)) throw new Error('Invalid topic format');
+    topic.status='pending'; topic.date=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    topic.id=Date.now(); topic.cycleNum=S.totalCycles+1; topic.hasArticle=false;
+    S.currentTopic=topic; S.currentArticle=null; S.history.push({...topic}); S.totalCycles++; S.pending++;
+    addLog('ok','Topic: '+topic.title);
+    addLog('ok','Keywords: '+topic.keywords.join(' | '));
+    document.getElementById('gen-btn').style.display='flex'; startGenCooldown();
+    document.getElementById('gen-btn').innerHTML='✦ Generate article';
+    document.getElementById('pub-btn').style.display='flex';
+    startTimer(); updateUI(); saveState();
+  } catch(e) {
+    addLog('err',e.message);
+    document.getElementById('topic-main').innerHTML='<div class="err-box"><div style="font-weight:600;margin-bottom:5px">Cycle error</div><div>'+esc(e.message)+'</div><div class="err-fix">1. Is Railway running?<br>2. Is CLAUDE_KEY set in Railway vars?<br>3. Is /claude-proxy deployed?</div></div>';
+  }
+  btn.disabled=false; btn.innerHTML='▶ Run content cycle';
+}
+
+// ── GENERATE ARTICLE ─────────────────────────────────────────────────────────
+async function generateArticle() {
+  if (!S.currentTopic) return;
+  const btn = document.getElementById('gen-btn');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> Writing...';
+  showCmTab('article'); addLog('info','Generating article: '+S.currentTopic.title);
+  document.getElementById('article-area').innerHTML='<div class="topic-card"><div class="empty"><span class="spin" style="width:20px;height:20px;border-width:3px;display:block;margin:0 auto 10px"></span><span style="color:var(--blue)">Writing article...</span><br>900–1100 words · Schema · FAQ · Internal links · OHG brand</div></div>';
+  const t = S.currentTopic;
+  const prompt = 'You are the content writer for One Health Globe (onehealthglobe.com). Generate a COMPLETE standalone HTML page using the OHG Premium Brand Design System.\n\nTOPIC: "'+t.title+'"\nPRIMARY KEYWORD: '+t.keywords[0]+'\nSECONDARY KEYWORDS: '+(t.keywords.slice(1)||[]).join(', ')+'\nDATE: '+new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'\n\nOHG MANDATORY BRAND SYSTEM:\nFONTS: Import DM Serif Display + DM Sans from Google Fonts. h1-h4 use DM Serif Display. Body uses DM Sans.\nCSS VARIABLES:\n--g1:#0b1f13;--g2:#145238;--g3:#1a6b4a;--g4:#2d9c6e;--g5:#e8f5ef;\n--gold:#d4a04a;--gold2:#c8873a;--gold3:#f5d78e;--cream:#fdfaf6;\n--text:#182b1f;--muted:#567065;--border:rgba(26,107,74,.14);\n--red:#dc2626;--red-bg:#fff1f2;--amber:#d97706;--amber-bg:#fffbeb;\n\nPAGE SECTIONS IN ORDER:\n1. VET BANNER: dark green gradient, white text, gold + red badges\n2. STICKY NAV: backdrop-blur, cream bg, pill links, gold CTA → paw scanner\n3. HERO: dark green gradient, white H1 with italic em, red urgency box, trust badges, btn-red + btn-gold\n4. AMBER DISCLAIMER: bg:#fffbeb border-left:5px solid #d97706\n5. QUICK REFERENCE TABLE: dark green thead, risk pills\n6. ALTERNATING CONTENT SECTIONS: white + green backgrounds\n7. GLANCE BOX: g5 bg + border-left:5px solid #1a6b4a\n8. 2-COL CARDS: white + shadow\n9. SYMPTOM GRID: 2-col, red circle icons\n10. VET ALERT: red-bg border-left\n11. MID-PAGE CTA: dark green gradient, gold btn → https://onehealthglobe.com/dog-paw-scanner/\n12. EMERGENCY GRID: red-bg 2-col cards\n13. FAQ ACCORDION: details/summary\n14. RESOURCE GRID: 3-col hover-lift cards\n15. FINAL CTA: dark green gradient, btn-gold + ghost\n16. FOOTER DISCLAIMER: amber-bg\n\nBUTTONS: btn-gold animated gradient gold, btn-green dark green, btn-red red\n\nINTERNAL LINKS (all required):\n- https://onehealthglobe.com/dog-paw-scanner/\n- https://onehealthglobe.com/pet-vaccine-tracker/\n- https://onehealthglobe.com/pet-first-aid-kit-checklist/\n- https://onehealthglobe.com/pet-safety-hub/\n- https://onehealthglobe.com/\n\nSEO:\n- JSON-LD @graph: BreadcrumbList + Article + FAQPage schemas\n- Meta title 50-60 chars, meta description 145-155 chars, canonical URL\n- ONE H1 with primary keyword, 4-5 H2s\n- EEAT: "veterinarians recommend", "according to the AVMA", "vet-reviewed"\n- 900-1100 words, medical disclaimer top AND bottom\n- FAQ: 3-5 H4 questions with paragraph answers\n\nOutput ONLY complete HTML from <!DOCTYPE html> to </html>. No preamble, no markdown.';
+  try {
+    const html = await callClaudeWithRetry([{role:'user',content:prompt}], false);
+    S.currentArticle = html;
+    const wordCount = html.replace(/<[^>]+>/g,'').split(/\s+/).filter(Boolean).length;
+    addLog('ok','Article written: ~'+wordCount+' words');
+    const idx = S.history.findIndex(h=>h.id===t.id);
+    if(idx>=0){S.history[idx].hasArticle=true;S.history[idx].wordCount=wordCount;}
+    if(S.currentTopic) S.currentTopic.hasArticle=true;
+    saveState(); updateUI();
+    document.getElementById('article-area').innerHTML =
+      '<div class="article-card"><div style="font-size:13px;font-weight:600;margin-bottom:8px">'+esc(t.title)+'</div>' +
+      '<div class="article-meta"><span>~'+wordCount+' words</span><span>schema ✓</span><span>FAQ ✓</span><span>internal links ✓</span><span>EEAT ✓</span><span>OHG brand ✓</span></div>' +
+      '<div class="arow" style="margin-bottom:9px"><button class="btn sm blue-btn" onclick="downloadArticle()">↓ Download HTML</button><button class="btn sm" onclick="copyArticle()">⊕ Copy HTML</button></div>' +
+      '<div class="wp-steps">▸ Publish to WordPress:<br>1. Pages → Add New → Code Editor<br>2. Select All → Delete → Paste HTML<br>3. Set Title → Set URL slug → Publish</div>' +
+      '<div class="code-preview">'+esc(html)+'</div></div>';
+    renderCurrentTopic();
+  } catch(e) {
+    addLog('err','Article failed: '+e.message);
+    document.getElementById('article-area').innerHTML='<div class="err-box">Error: '+esc(e.message)+'</div>';
+  }
+  btn.disabled=false; btn.innerHTML='↻ Regenerate article';
+}
+
+function downloadArticle() {
+  if(!S.currentArticle||!S.currentTopic) return;
+  const blob = new Blob([S.currentArticle],{type:'text/html;charset=utf-8'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download='ohg-'+S.currentTopic.title.toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,55)+'.html';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  addLog('ok','Downloaded article HTML');
+}
+function copyArticle() {
+  if(!S.currentArticle) return;
+  navigator.clipboard.writeText(S.currentArticle).then(()=>{addLog('ok','Article copied to clipboard');alert('✓ Copied! Paste into WordPress Code Editor.');}).catch(()=>addLog('warn','Clipboard failed — use Download'));
+}
+function markPublished() {
+  if(!S.currentTopic) return;
+  S.currentTopic.status='published';
+  const idx=S.history.findIndex(h=>h.id===S.currentTopic.id);
+  if(idx>=0) S.history[idx].status='published';
+  S.pending=Math.max(0,S.pending-1); S.published++;
+  document.getElementById('pub-btn').style.display='none';
+  addLog('ok','Published: '+S.currentTopic.title);
+  renderCurrentTopic(); updateUI(); saveState();
+}
+async function scanSite() {
+  addLog('info','Scanning OHG sitemap...'); set('scan-info','scanning...');
+  try {
+    const text = await callClaude([{role:'user',content:'Search the web for the sitemap of onehealthglobe.com — list the 10 most recently updated URLs as a numbered list.'}], true);
+    addLog('ok','Scan complete');
+    text.split('\n').filter(l=>l.trim()).slice(0,12).forEach(l=>addLog('info',l.trim().substring(0,120)));
+    const now = new Date().toLocaleString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'});
+    S.lastScan=now; set('scan-info','last scan: '+now); saveState(); showCmTab('cmlog');
+  } catch(e) { addLog('err','Scan failed: '+e.message); set('scan-info','scan failed'); }
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function set(id,val){const el=document.getElementById(id);if(el)el.textContent=val;}
+
+// AUTO REFRESH AUTOPILOT every 30s
+setInterval(()=>{ if(document.getElementById('page-autopilot').classList.contains('active')) location.reload(); }, 30000);
+
+init();
+</script>
+</body></html>`;
 
   res.writeHead(200,{'Content-Type':'text/html'});
   res.end(dashHtml);
+
+
 }).listen(PORT, () => log(`Dashboard on port ${PORT}`));
 
 // ── VIRAL COMMENT FALLBACK ────────────────────────────────────────────────────
